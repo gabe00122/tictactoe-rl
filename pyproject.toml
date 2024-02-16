@@ -14,3 +14,6 @@ jaxtyping = "^0.2.25"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+play = "tictactoe_ai.play:play"
