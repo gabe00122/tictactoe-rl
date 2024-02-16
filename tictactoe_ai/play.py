@@ -15,18 +15,31 @@ def play():
     state: GameState = initalize_game()
     display(state)
     while not state['over_result']['is_over']:
-        move = int(input("Move: "))
-        state = turn(state, jnp.int8(move))
-        
-        board = state["board"]
-        avalible = board.reshape((9, )) == 0
-        count = jnp.count_nonzero(avalible)
-        probs = avalible / count
-        key, choice_key = random.split(key)
-        
-        move = random.choice(choice_key, jnp.arange(9), p=probs)
+        # X's
+        move = get_human_move()
+        state = turn(state, move)
+
+        # O's
+        move, key = get_random_move(state, key)
         state = turn(state, move)
         display(state)
+
+
+@jax.jit
+def get_random_move(state, key):
+    board = state["board"]
+    avalible_moves = board.reshape((9,)) == 0
+    count = jnp.count_nonzero(avalible_moves)
+    probs = avalible_moves / count
+    key, choice_key = random.split(key)
+
+    return random.choice(choice_key, jnp.arange(9), p=probs), key
+
+
+def get_human_move():
+    x = int(input("X: "))
+    y = int(input("Y: "))
+    return jnp.int8(x + y * 3)
 
 
 if __name__ == '__main__':

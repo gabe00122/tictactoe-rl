@@ -5,7 +5,7 @@ from jaxtyping import Scalar, Bool, Int8, Array
 
 
 def check_gameover(board: Int8[Array, "3 3"]) -> OverResult:
-    players = jnp.array([-1, 1], dtype=jnp.uint8)
+    players = jnp.array([-1, 1], dtype=jnp.int8)
     
     v_check_player_won = jax.vmap(check_player_won, in_axes=(None, 0))
     winners = v_check_player_won(board, players)

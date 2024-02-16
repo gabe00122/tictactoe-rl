@@ -5,7 +5,7 @@ def display(state: GameState):
     board = state['board'].tolist()
     board_str = ''
     
-    for row in board:
+    for row in reversed(board):
         for cell in row:
             match cell:
                 case -1:
