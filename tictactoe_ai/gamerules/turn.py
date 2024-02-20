@@ -1,10 +1,17 @@
 from .types.state import GameState
 from .over import check_gameover
+from .initialize import initalize_game
 import jax
 from jaxtyping import Scalar, Int8
 
 
 def turn(state: GameState, action: Int8[Scalar, ""]) -> GameState:
+    state = jax.lax.cond(
+        state["over_result"]["is_over"],
+        lambda: initalize_game(),
+        lambda: state,
+    )
+
     board = state['board']
     active_player = state['active_player']
     
