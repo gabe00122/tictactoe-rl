@@ -3,11 +3,14 @@ from jax import numpy as jnp, random
 from jaxtyping import PRNGKeyArray, Array, Scalar, Float, Int, Bool
 from typing import TypedDict, Any
 from functools import partial
-from .model.actor_critic import TrainingState
-from .gamerules.turn import turn
-from .gamerules.types import GameState
-from .model.actor_critic import ActorCritic
-from .observation import get_available_actions, get_beforestate_observation, get_afterstate_observation
+from tictactoe_ai.model.actor_critic import TrainingState
+from tictactoe_ai.model.initalize import create_actor_critic
+from tictactoe_ai.model.run_settings import RunSettings
+from tictactoe_ai.gamerules.initialize import initalize_game
+from tictactoe_ai.gamerules.turn import turn
+from tictactoe_ai.gamerules.types import GameState
+from tictactoe_ai.model.actor_critic import ActorCritic
+from tictactoe_ai.observation import get_available_actions, get_beforestate_observation, get_afterstate_observation
 
 
 class StaticState(TypedDict):
@@ -95,3 +98,14 @@ def train_n_steps(static_state: StaticState, step_state: StepState) -> StepState
         lambda _, step: train_step(static_state, step),
         step_state
     )
+
+
+def main():
+    settings = {
+
+    }
+    model = create_actor_critic()
+
+
+if __name__ == '__main__':
+    main()

@@ -1,11 +1,9 @@
 import jax
 from jax import numpy as jnp, random
-from flax import linen as nn
-from .gamerules.initialize import initalize_game
-from .gamerules.types.state import GameState
-from .gamerules.turn import turn
-from .display import display
-from .extra.xla_graph import main
+from tictactoe_ai.gamerules.initialize import initalize_game
+from tictactoe_ai.gamerules.types.state import GameState
+from tictactoe_ai.gamerules.turn import turn
+from tictactoe_ai.display import display
 
 initalize_game = jax.jit(initalize_game)
 turn = jax.jit(turn)
@@ -45,4 +43,4 @@ def get_human_move():
 
 
 if __name__ == '__main__':
-    main()
+    play()
