@@ -8,23 +8,23 @@ from .actor_critic import ActorCritic, ActorCriticModel
 def create_actor_model(settings: RunSettings, action_space: int) -> nn.Module:
     return Mlp(
         features=settings["actor_hidden_layers"] + [action_space],
-        last_layer_scale=settings["actor_last_layer_scale"],
+        # last_layer_scale=settings["actor_last_layer_scale"],
     )
 
 
 def create_critic_model(settings: RunSettings) -> nn.Module:
     return Mlp(
         features=settings["critic_hidden_layers"] + [1],
-        last_layer_scale=settings["critic_last_layer_scale"],
+        # last_layer_scale=settings["critic_last_layer_scale"],
     )
 
 
 def create_actor_critic(settings: RunSettings) -> ActorCritic:
-    root_model = Mlp(features=settings["root_hidden_layers"])
+    body_model = Mlp(features=settings["root_hidden_layers"])
     actor_model = create_actor_model(settings, action_space=9)
     critic_model = create_critic_model(settings)
 
-    actor_critic_model = ActorCriticModel(root=root_model, actor=actor_model, critic=critic_model)
+    actor_critic_model = ActorCriticModel(body=body_model, actor_head=actor_model, critic_head=critic_model)
 
     optimizer = optax.adamw(
         optax.linear_schedule(settings["learning_rate"], 0, settings['total_steps']),
@@ -39,6 +39,5 @@ def create_actor_critic(settings: RunSettings) -> ActorCritic:
         discount=settings["discount"],
         actor_coef=settings["actor_coef"],
         critic_coef=settings["critic_coef"],
-        entropy_coef=settings["entropy_coef"],
     )
     return actor_critic

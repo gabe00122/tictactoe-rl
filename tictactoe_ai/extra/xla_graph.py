@@ -1,8 +1,8 @@
 import jax
 from jax import random, numpy as jnp
 from jaxlib import xla_client
-from ..gamerules.turn import turn
-from ..gamerules.initialize import initalize_game
+from tictactoe_ai.gamerules.turn import turn
+from tictactoe_ai.gamerules.initialize import initalize_game
 
 
 def main():

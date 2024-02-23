@@ -5,9 +5,8 @@ from flax import linen as nn, struct
 from flax.core.frozen_dict import FrozenDict, Mapping
 from flax.struct import PyTreeNode
 import optax
-from jaxtyping import ArrayLike, Array, Scalar, Float32, Bool, PRNGKeyArray, Int
+from jaxtyping import Array, Scalar, Float32, Bool, PRNGKeyArray, Int
 from .actor_critic_model import ActorCriticModel
-from .action_input import ActionInput
 from .metrics.type import Metrics
 from .entropy import entropy_loss
 
@@ -31,7 +30,8 @@ class ActorCritic(PyTreeNode):
     
     def init(self, key: PRNGKeyArray) -> TrainingState:
         observation_dummy = jnp.zeros((9, 3), jnp.float32)
-        model_params = self.model.init(key, observation_dummy)
+        mask_dummy = jnp.full((9,), True)
+        model_params = self.model.init(key, observation_dummy, mask_dummy)
 
         return TrainingState(
             model_params=model_params,

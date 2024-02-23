@@ -15,7 +15,6 @@ from tictactoe_ai.observation import get_available_actions, get_beforestate_obse
 
 class StaticState(TypedDict):
     env_num: int
-    iterations: int
     actor_critic: ActorCritic
 
 
@@ -90,21 +89,62 @@ def split_n(rng_key: PRNGKeyArray, num: int) -> tuple[PRNGKeyArray, PRNGKeyArray
     return keys[0], keys[1:]
 
 
-@partial(jax.jit, static_argnums=(0,), donate_argnums=(1,))
-def train_n_steps(static_state: StaticState, step_state: StepState) -> StepState:
+@partial(jax.jit, static_argnums=(0, 2), donate_argnums=(1,))
+def jit_train_n_steps(static_state: StaticState, step_state: StepState, iterations: int) -> StepState:
     return jax.lax.fori_loop(
         0,
-        static_state["iterations"],
+        iterations,
         lambda _, step: train_step(static_state, step),
         step_state
     )
 
 
-def main():
-    settings = {
+def train_n_steps(static_state: StaticState, step_state: StepState, total_iterations: int, jit_iterations: int) -> StepState:
+    for i in range(total_iterations // jit_iterations):
+        jit_train_n_steps(static_state, step_state, jit_iterations)
+        print(f"step: {i * jit_iterations}")
 
+
+def main():
+    settings: RunSettings = {
+        'git_hash': 'blank',
+        'env_name': 'tictactoe',
+        'seed': 4321,
+        'total_steps': 100_000,
+        'env_num': 8,
+        'discount': 0.99,
+        'root_hidden_layers': [64],
+        'actor_hidden_layers': [64],
+        'critic_hidden_layers': [64],
+        'actor_last_layer_scale': 0.01,
+        'critic_last_layer_scale': 1.0,
+        'learning_rate': 0.0001,
+        'actor_coef': 0.25,
+        'critic_coef': 1.0,
+        'optimizer': 'adamw',
+        'adam_beta': 0.97,
+        'weight_decay': 0.0,
     }
-    model = create_actor_critic()
+
+    rng_key = random.PRNGKey(settings['seed'])
+    actor_critic = create_actor_critic(settings)
+
+    rng_key, model_key = random.split(rng_key)
+    model_training_state = actor_critic.init(model_key)
+
+    static_state: StaticState = {
+        'env_num': settings['env_num'],
+        'actor_critic': actor_critic,
+    }
+
+    game_state = initalize_game()
+    step_state: StepState = {
+        'rng_key': rng_key,
+        'env_state': game_state,
+        'importance': jnp.ones((settings['env_num']), dtype=jnp.float32),
+        'training_state': model_training_state
+    }
+    train_n_steps(static_state, step_state, settings['total_steps'], 1_000)
 
 
 if __name__ == '__main__':
