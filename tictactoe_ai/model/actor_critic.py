@@ -32,7 +32,7 @@ class ActorCritic(PyTreeNode):
         return id(self)
 
     def init(self, key: PRNGKeyArray) -> TrainingState:
-        observation_dummy = jnp.zeros((9, 3), jnp.float32)
+        observation_dummy = jnp.zeros((9 * 3), jnp.float32)
         mask_dummy = jnp.full((9,), True)
         model_params = self.model.init(key, observation_dummy, mask_dummy)
 

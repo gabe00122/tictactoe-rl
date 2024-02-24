@@ -48,8 +48,8 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     after_obs = jax.vmap(get_afterstate_observation)(env_state)
 
     # learn from the action
-    reward = jax.vmap(get_reward)(env_state)
-    done = jax.vmap(get_done)(env_state)
+    reward = get_reward(env_state)
+    done = get_done(env_state)
     training_state, metrics, importance = actor_critic.train_step(training_state, before_obs, available_actions, actions, reward, after_obs, done, importance)
 
     # play the opponent action, no training is happening from this action for now
@@ -67,6 +67,7 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     }
 
 
+@jax.vmap
 def get_reward(state: GameState) -> Float[Scalar, ""]:
     result = state['over_result']
     is_over = result['is_over']
@@ -75,11 +76,12 @@ def get_reward(state: GameState) -> Float[Scalar, ""]:
 
     return jax.lax.cond(
         is_over,
-        lambda: jax.lax.cond(previous_active_player == 1, lambda: winner, lambda: -winner),
-        lambda: jnp.int8(0)
+        lambda: jax.lax.cond(previous_active_player == 1, lambda: winner, lambda: -winner).astype(jnp.float32),
+        lambda: jnp.float32(0)
     )
 
 
+@jax.vmap
 def get_done(state: GameState) -> Bool[Scalar, ""]:
     return state["over_result"]["is_over"]
 
