@@ -18,7 +18,6 @@ class RunSettings(TypedDict):
     optimizer: str
     adam_beta: float
     weight_decay: float
-    clip_norm: float
     actor_coef: float
     critic_coef: float
 

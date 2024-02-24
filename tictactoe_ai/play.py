@@ -1,18 +1,18 @@
 import jax
 from jax import numpy as jnp, random
-from tictactoe_ai.gamerules.initialize import initalize_game
+from tictactoe_ai.gamerules.initialize import initialize_game
 from tictactoe_ai.gamerules.types.state import GameState
 from tictactoe_ai.gamerules.turn import turn
 from tictactoe_ai.display import display
 
-initalize_game = jax.jit(initalize_game)
+initalize_game = jax.jit(initialize_game)
 turn = jax.jit(turn)
 
 
 def play():
     key = random.PRNGKey(434)
     
-    state: GameState = initalize_game()
+    state: GameState = initialize_game()
     display(state)
     while not state['over_result']['is_over']:
         # X's

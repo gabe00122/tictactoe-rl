@@ -37,4 +37,4 @@ def get_afterstate_observation(state: GameState) -> Float[Array, "9 3"]:
 
 
 def get_available_actions(state: GameState) -> Bool[Array, "9"]:
-    return jnp.equal(state["board"], 0)
+    return jnp.equal(state["board"].flatten(), 0)
