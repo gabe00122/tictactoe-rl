@@ -23,6 +23,9 @@ def get_beforestate_observation(state: GameState) -> Float[Array, "9 3"]:
     return jax.lax.cond(state["over_result"]["is_over"], on_over, on_not_over)
 
 
+get_beforestate_observation_vec = jax.vmap(get_beforestate_observation)
+
+
 def get_afterstate_observation(state: GameState) -> Float[Array, "9 3"]:
     num_classes = 3
 
@@ -36,5 +39,11 @@ def get_afterstate_observation(state: GameState) -> Float[Array, "9 3"]:
     return jax.nn.one_hot(board, num_classes).flatten()
 
 
+get_afterstate_observation_vec = jax.vmap(get_afterstate_observation)
+
+
 def get_available_actions(state: GameState) -> Bool[Array, "9"]:
     return jnp.equal(state["board"].flatten(), 0)
+
+
+get_available_actions_vec = jax.vmap(get_available_actions)

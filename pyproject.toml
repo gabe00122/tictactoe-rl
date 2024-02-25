@@ -12,6 +12,9 @@ jaxtyping = "^0.2.25"
 flax = "^0.8.1"
 optax = "^0.1.9"
 orbax-checkpoint = "^0.5.3"
+mypy = "^1.8.0"
+beartype = "^0.17.2"
+pandas = "^2.2.1"
 
 
 [build-system]
