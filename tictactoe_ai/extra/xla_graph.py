@@ -12,14 +12,14 @@ def main():
     state = initialize_game()
     # state = action_phase(state, )
 
-    compiled_text = jax.jit(turn).lower(
-        state, jnp.int8(0)
-    ).compile().as_text()
+    compiled_text = jax.jit(turn).lower(state, jnp.int8(0)).compile().as_text()
 
-    dot_graph = xla_client._xla.hlo_module_to_dot_graph(xla_client._xla.hlo_module_from_text(compiled_text))
-    with open("out.dot", 'w') as f:
+    dot_graph = xla_client._xla.hlo_module_to_dot_graph(
+        xla_client._xla.hlo_module_from_text(compiled_text)
+    )
+    with open("out.dot", "w") as f:
         f.write(dot_graph)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

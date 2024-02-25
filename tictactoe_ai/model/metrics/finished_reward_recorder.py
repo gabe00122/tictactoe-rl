@@ -23,10 +23,17 @@ class FinishedRewardRecorder:
     ) -> tuple[FinishedRewardRecorderState, Array]:
         ongoing_episode_rewards = state.ongoing_episode_rewards + step_rewards
 
-        finished_episode_rewards = jnp.where(done, ongoing_episode_rewards, state.finished_episode_rewards)
-        ongoing_episode_rewards = jnp.where(done, jnp.zeros((self.vec_num,)), ongoing_episode_rewards)
+        finished_episode_rewards = jnp.where(
+            done, ongoing_episode_rewards, state.finished_episode_rewards
+        )
+        ongoing_episode_rewards = jnp.where(
+            done, jnp.zeros((self.vec_num,)), ongoing_episode_rewards
+        )
 
-        return FinishedRewardRecorderState(
-            finished_episode_rewards=finished_episode_rewards,
-            ongoing_episode_rewards=ongoing_episode_rewards,
-        ), finished_episode_rewards
+        return (
+            FinishedRewardRecorderState(
+                finished_episode_rewards=finished_episode_rewards,
+                ongoing_episode_rewards=ongoing_episode_rewards,
+            ),
+            finished_episode_rewards,
+        )

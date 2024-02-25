@@ -11,10 +11,10 @@ turn = jax.jit(turn)
 
 def play():
     key = random.PRNGKey(434)
-    
+
     state: GameState = initialize_game()
     display(state)
-    while not state['over_result']['is_over']:
+    while not state["over_result"]["is_over"]:
         # X's
         move = get_human_move()
         state = turn(state, move)
@@ -42,5 +42,5 @@ def get_human_move():
     return jnp.int8(x + y * 3)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     play()

@@ -13,16 +13,16 @@ def turn(state: GameState, action: Int8[Scalar, ""]) -> GameState:
         lambda: state,
     )
 
-    board = state['board']
-    active_player = state['active_player']
-    
+    board = state["board"]
+    active_player = state["active_player"]
+
     x_pos = action % 3
     y_pos = action // 3
     board = board.at[y_pos, x_pos].set(active_player)
     active_player = -active_player
-    
+
     return {
-        'board': board,
-        'active_player': active_player,
-        'over_result': check_gameover(board),
+        "board": board,
+        "active_player": active_player,
+        "over_result": check_gameover(board),
     }

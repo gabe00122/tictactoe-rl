@@ -40,31 +40,39 @@ class ActorCritic(PyTreeNode):
             model_params=model_params,
             opt_state=self.optimizer.init(model_params),
         )
-    
-    def act(self, params: TrainingState, obs: Float32[Array, "9 3"], avalible_actions: Bool[Array, "9"], key: PRNGKeyArray):
+
+    def act(
+        self,
+        params: TrainingState,
+        obs: Float32[Array, "9 3"],
+        avalible_actions: Bool[Array, "9"],
+        key: PRNGKeyArray,
+    ):
         logits, _ = self.model.apply(params.model_params, obs, avalible_actions)
         return random.categorical(key, logits)
 
     def loss(
-            self,
-            model_params: ModelParams,
-            obs: Float32[Array, "vec 9 3"],
-            avalible_actions: Bool[Array, "vec 9"],
-            actions: Int[Array, "vec"],
-            rewards: Float32[Array, "vec"],
-            next_obs: Float32[Array, "vec 9 3"],
-            done: Bool[Array, "vec"],
-            importance: Float32[Array, "vec"],
+        self,
+        model_params: ModelParams,
+        obs: Float32[Array, "vec 9 3"],
+        avalible_actions: Bool[Array, "vec 9"],
+        actions: Int[Array, "vec"],
+        rewards: Float32[Array, "vec"],
+        next_obs: Float32[Array, "vec 9 3"],
+        done: Bool[Array, "vec"],
+        importance: Float32[Array, "vec"],
     ) -> tuple[Float32[Scalar, ""], Metrics]:
         v_model = jax.vmap(self.model.apply, (None, 0, 0), (0, 0))
         v_entropy_loss = jax.vmap(entropy_loss)
         v_log_softmax = jax.vmap(nn.log_softmax)
 
         action_logits, vf_values = v_model(model_params, obs, avalible_actions)
-        #print(vf_values.tolist())
+        # print(vf_values.tolist())
 
         #  avalible_actions is used for the second call because it must be the right shape but the action output isn't used
-        _, next_critic_values = v_model(jax.lax.stop_gradient(model_params), next_obs, avalible_actions)
+        _, next_critic_values = v_model(
+            jax.lax.stop_gradient(model_params), next_obs, avalible_actions
+        )
 
         returns = jnp.where(
             done,
@@ -92,39 +100,52 @@ class ActorCritic(PyTreeNode):
         }
 
         return loss, metrics
-    
+
     def update_model(
-            self,
-            params: TrainingState,
-            obs: Float32[Array, "vec 9 3"],
-            avalible_actions: Bool[Array, "vec 9"],
-            actions: Int[Array, "vec"],
-            rewards: Float32[Array, "vec"],
-            next_obs: Float32[Array, "vec 9 3"],
-            done: Bool[Array, "vec"],
-            importance: Float32[Array, "vec"],
+        self,
+        params: TrainingState,
+        obs: Float32[Array, "vec 9 3"],
+        avalible_actions: Bool[Array, "vec 9"],
+        actions: Int[Array, "vec"],
+        rewards: Float32[Array, "vec"],
+        next_obs: Float32[Array, "vec 9 3"],
+        done: Bool[Array, "vec"],
+        importance: Float32[Array, "vec"],
     ):
         loss_fn = jax.value_and_grad(self.loss, has_aux=True)
-        (loss, metrics), grad = loss_fn(params.model_params, obs, avalible_actions, actions, rewards, next_obs, done, importance)
+        (loss, metrics), grad = loss_fn(
+            params.model_params,
+            obs,
+            avalible_actions,
+            actions,
+            rewards,
+            next_obs,
+            done,
+            importance,
+        )
 
-        updates, opt_state = self.optimizer.update(grad, params.opt_state, params.model_params)
+        updates, opt_state = self.optimizer.update(
+            grad, params.opt_state, params.model_params
+        )
         model_params = optax.apply_updates(params.model_params, updates)
 
         params = TrainingState(model_params, opt_state)
         return params, metrics
 
     def train_step(
-            self,
-            params: TrainingState,
-            obs: Float32[Array, "vec 9 3"],
-            avalible_actions: Bool[Array, "vec 9"],
-            actions: Int[Array, "vec"],
-            rewards: Float32[Array, "vec"],
-            next_obs: Float32[Array, "vec 9 3"],
-            done: Bool[Array, "vec"],
-            importance: Float32[Array, "vec"],
+        self,
+        params: TrainingState,
+        obs: Float32[Array, "vec 9 3"],
+        avalible_actions: Bool[Array, "vec 9"],
+        actions: Int[Array, "vec"],
+        rewards: Float32[Array, "vec"],
+        next_obs: Float32[Array, "vec 9 3"],
+        done: Bool[Array, "vec"],
+        importance: Float32[Array, "vec"],
     ):
-        params, metrics = self.update_model(params, obs, avalible_actions, actions, rewards, next_obs, done, importance)
+        params, metrics = self.update_model(
+            params, obs, avalible_actions, actions, rewards, next_obs, done, importance
+        )
 
         # set the importance back to 1 if it's the end of an episode
         importance = jnp.maximum(importance * self.discount, done)

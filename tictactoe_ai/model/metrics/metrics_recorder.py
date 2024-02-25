@@ -1,7 +1,10 @@
 from dataclasses import dataclass, field
 from typing import NamedTuple
 from jax import numpy as jnp, Array
-from .finished_reward_recorder import FinishedRewardRecorder, FinishedRewardRecorderState
+from .finished_reward_recorder import (
+    FinishedRewardRecorder,
+    FinishedRewardRecorderState,
+)
 
 
 class MetricsRecorderState(NamedTuple):
@@ -29,13 +32,17 @@ class MetricsRecorder:
             mean_rewards=jnp.zeros((self.step_num,), dtype=jnp.float32),
         )
 
-    def update(self, state: MetricsRecorderState, done: Array, step_rewards: Array) -> MetricsRecorderState:
+    def update(
+        self, state: MetricsRecorderState, done: Array, step_rewards: Array
+    ) -> MetricsRecorderState:
         step = state.step
         finished_reward_recorder_state = state.finished_reward_recorder_state
         mean_rewards = state.mean_rewards
 
-        finished_reward_recorder_state, finished_rewards = self.finished_reward_recorder.update(
-            finished_reward_recorder_state, done, step_rewards
+        finished_reward_recorder_state, finished_rewards = (
+            self.finished_reward_recorder.update(
+                finished_reward_recorder_state, done, step_rewards
+            )
         )
 
         mean_rewards = mean_rewards.at[step].set(finished_rewards.mean())
