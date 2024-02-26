@@ -61,6 +61,7 @@ class ActorCritic(PyTreeNode):
         next_obs: Float32[Array, "vec 9 3"],
         done: Bool[Array, "vec"],
         importance: Float32[Array, "vec"],
+        took_turn: Bool[Array, "vec"],
     ) -> tuple[Float32[Scalar, ""], Metrics]:
         v_model = jax.vmap(self.model.apply, (None, 0, 0), (0, 0))
         v_entropy_loss = jax.vmap(entropy_loss)
@@ -87,6 +88,8 @@ class ActorCritic(PyTreeNode):
         selected_action_prob = action_probs[jnp.arange(action_probs.shape[0]), actions]
         actor_loss = -jnp.mean(selected_action_prob * td_error * importance)
 
+        actor_loss = jnp.where(took_turn, actor_loss, jnp.zeros_like(actor_loss))
+
         entropy = jnp.mean(v_entropy_loss(action_probs))
 
         loss = self.actor_coef * actor_loss + critic_loss
@@ -105,18 +108,19 @@ class ActorCritic(PyTreeNode):
         self,
         params: TrainingState,
         obs: Float32[Array, "vec 9 3"],
-        avalible_actions: Bool[Array, "vec 9"],
+        available_actions: Bool[Array, "vec 9"],
         actions: Int[Array, "vec"],
         rewards: Float32[Array, "vec"],
         next_obs: Float32[Array, "vec 9 3"],
         done: Bool[Array, "vec"],
         importance: Float32[Array, "vec"],
+        took_turn: Bool[Array, "vec"],
     ):
         loss_fn = jax.value_and_grad(self.loss, has_aux=True)
         (loss, metrics), grad = loss_fn(
             params.model_params,
             obs,
-            avalible_actions,
+            available_actions,
             actions,
             rewards,
             next_obs,
@@ -136,15 +140,16 @@ class ActorCritic(PyTreeNode):
         self,
         params: TrainingState,
         obs: Float32[Array, "vec 9 3"],
-        avalible_actions: Bool[Array, "vec 9"],
+        available_actions: Bool[Array, "vec 9"],
         actions: Int[Array, "vec"],
         rewards: Float32[Array, "vec"],
         next_obs: Float32[Array, "vec 9 3"],
         done: Bool[Array, "vec"],
         importance: Float32[Array, "vec"],
+        took_turn: Bool[Array, "vec"],
     ):
         params, metrics = self.update_model(
-            params, obs, avalible_actions, actions, rewards, next_obs, done, importance
+            params, obs, available_actions, actions, rewards, next_obs, done, importance
         )
 
         # set the importance back to 1 if it's the end of an episode

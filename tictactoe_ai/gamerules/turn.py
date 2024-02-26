@@ -7,12 +7,6 @@ from jaxtyping import Scalar, Int8
 
 
 def turn(state: GameState, action: Int8[Scalar, ""]) -> GameState:
-    state = jax.lax.cond(
-        state["over_result"]["is_over"],
-        lambda: initialize_game(),
-        lambda: state,
-    )
-
     board = state["board"]
     active_player = state["active_player"]
 
@@ -26,3 +20,11 @@ def turn(state: GameState, action: Int8[Scalar, ""]) -> GameState:
         "active_player": active_player,
         "over_result": check_gameover(board),
     }
+
+
+def reset_if_done(state: GameState):
+    return jax.lax.cond(
+        state["over_result"]["is_over"],
+        lambda: initialize_game(),
+        lambda: state,
+    )
