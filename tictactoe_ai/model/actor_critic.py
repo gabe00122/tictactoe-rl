@@ -55,7 +55,7 @@ class ActorCritic(PyTreeNode):
         self,
         model_params: ModelParams,
         obs: Float32[Array, "vec 9 3"],
-        avalible_actions: Bool[Array, "vec 9"],
+        available_actions: Bool[Array, "vec 9"],
         actions: Int[Array, "vec"],
         rewards: Float32[Array, "vec"],
         next_obs: Float32[Array, "vec 9 3"],
@@ -67,23 +67,24 @@ class ActorCritic(PyTreeNode):
         v_entropy_loss = jax.vmap(entropy_loss)
         v_log_softmax = jax.vmap(nn.log_softmax)
 
-        action_logits, vf_values = v_model(model_params, obs, avalible_actions)
+        action_logits, vf_values = v_model(model_params, obs, available_actions)
         # print(vf_values.tolist())
 
-        #  avalible_actions is used for the second call because it must be the right shape but the action output isn't used
-        _, next_critic_values = v_model(
-            jax.lax.stop_gradient(model_params), next_obs, avalible_actions
+        #  available_actions is used for the second call because it must be the right shape but the action output isn't used
+        _, next_vf_values = v_model(
+            jax.lax.stop_gradient(model_params), next_obs, available_actions
         )
 
-        returns = jnp.where(
+        target_value = jnp.where(
             done,
             rewards,
-            rewards + self.discount * next_critic_values,
+            rewards + self.discount * next_vf_values,
         )
 
-        td_error = returns - vf_values
+        td_error = target_value - vf_values
         critic_loss = (td_error**2).mean()
 
+        # actor loss
         action_probs = v_log_softmax(action_logits)
         selected_action_prob = action_probs[jnp.arange(action_probs.shape[0]), actions]
         actor_loss = -jnp.mean(selected_action_prob * td_error * importance)
@@ -98,7 +99,7 @@ class ActorCritic(PyTreeNode):
             "actor_loss": actor_loss,
             "critic_loss": critic_loss,
             "td_error": jnp.mean(td_error),
-            "state_value": jnp.mean(returns),
+            "state_value": jnp.mean(target_value),
             "entropy": entropy,
         }
 
@@ -126,6 +127,7 @@ class ActorCritic(PyTreeNode):
             next_obs,
             done,
             importance,
+            took_turn,
         )
 
         updates, opt_state = self.optimizer.update(

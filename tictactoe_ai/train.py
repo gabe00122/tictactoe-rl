@@ -78,7 +78,7 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     )
 
     # log training metrics
-    # metrics_state = metrics_recorder.update(metrics_state, done, reward, metrics)
+    metrics_state = metrics_recorder.update(metrics_state, done, reward, metrics)
 
     # reset
     env_state = jax.vmap(reset_if_done)(env_state)
@@ -108,7 +108,7 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     )
 
     # log training metrics
-    # metrics_state = metrics_recorder.update(metrics_state, done, reward, metrics)
+    metrics_state = metrics_recorder.update(metrics_state, done, reward, metrics)
 
     return StepState(
         env_state=env_state,
