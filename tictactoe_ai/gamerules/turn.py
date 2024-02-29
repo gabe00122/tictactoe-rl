@@ -25,6 +25,6 @@ def turn(state: GameState, action: Int8[Scalar, ""]) -> GameState:
 def reset_if_done(state: GameState):
     return jax.lax.cond(
         state["over_result"]["is_over"],
-        lambda: initialize_game(),
+        lambda: initialize_game() | {"active_player": state["active_player"]},
         lambda: state,
     )

@@ -48,21 +48,26 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     env_state = jax.vmap(reset_if_done)(env_state)
 
     # pick an action
-    before_obs = get_observation_vec(env_state, player=jnp.int8(1))
+    before_obs = get_observation_vec(env_state, 1)
     available_actions = get_available_actions_vec(env_state)
+    #
+    # act_vec = jax.vmap(actor_critic.act, (None, 0, 0, 0))
+    #
+    # rng_key, action_keys = split_n(rng_key, env_num)
+    # actions = act_vec(training_state, before_obs, available_actions, action_keys)
 
-    act_vec = jax.vmap(actor_critic.act, (None, 0, 0, 0))
-
+    get_random_move_vec = jax.vmap(get_random_move, (0, 0))
     rng_key, action_keys = split_n(rng_key, env_num)
-    actions = act_vec(training_state, before_obs, available_actions, action_keys)
+
+    actions = get_random_move_vec(env_state, action_keys)
 
     # play the action
     turn_vec = jax.vmap(turn, (0, 0))
     env_state = turn_vec(env_state, actions)
 
     # gather the after state info to learn from later
-    after_obs = get_observation_vec(env_state, player=jnp.int8(1))
-    reward = get_reward(env_state, player=jnp.int8(1))
+    after_obs = get_observation_vec(env_state, 1)
+    reward = get_reward(env_state, 1)
     done = get_done(env_state)
 
     training_state, metrics, importance = actor_critic.train_step(
@@ -91,8 +96,8 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     env_state = turn_vec(env_state, opponent_actions)
 
     # train the critic from the other state transition
-    opponent_after_state = get_observation_vec(env_state, player=jnp.int8(1))
-    reward = get_reward(env_state, player=jnp.int8(1))
+    opponent_after_state = get_observation_vec(env_state, 1)
+    reward = get_reward(env_state, 1)
     done = get_done(env_state)
 
     training_state, metrics, importance = actor_critic.train_step(
@@ -119,10 +124,13 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     )
 
 
-@partial(jax.jit, static_argnums=(0, 1), donate_argnums=(2,))
+# @partial(jax.jit, static_argnums=(0, 1), donate_argnums=(2,))
 def jit_train_n_steps(
     static_state: StaticState, iterations: int, step_state: StepState
 ) -> StepState:
+    metrics = metrics_recorder.reset(step_state.metrics_state)
+    step_state = step_state._replace(metrics_state=metrics)
+
     return jax.lax.fori_loop(
         0, iterations, lambda _, step: train_step(static_state, step), step_state
     )
@@ -136,7 +144,7 @@ def train_n_steps(
 ) -> StepState:
     for i in range(total_iterations // jit_iterations):
         step_state = jit_train_n_steps(static_state, jit_iterations, step_state)
-        print(f"step: {i * jit_iterations}")
+        print(f"step: {i * jit_iterations}, reward: {step_state.metrics_state.mean_rewards.mean().item()}")
     return step_state
 
 
@@ -145,20 +153,20 @@ def main():
         git_hash="blank",
         env_name="tictactoe",
         seed=4321,
-        total_steps=100_000,
-        env_num=8,
+        total_steps=500_000,
+        env_num=128,
         discount=0.99,
-        root_hidden_layers=[64],
+        root_hidden_layers=[128, 128],
         actor_hidden_layers=[64],
         critic_hidden_layers=[64],
         actor_last_layer_scale=0.01,
         critic_last_layer_scale=1.0,
         learning_rate=0.0001,
-        actor_coef=0.25,
+        actor_coef=0.20,
         critic_coef=1.0,
         optimizer="adamw",
         adam_beta=0.97,
-        weight_decay=0.0,
+        weight_decay=0.001,
     )
 
     rng_key = random.PRNGKey(settings["seed"])
@@ -181,7 +189,7 @@ def main():
         env_state=game_state,
         importance=jnp.ones(env_num, dtype=jnp.float32),
         training_state=model_training_state,
-        metrics_state=metrics_recorder.init(jit_iterations, env_num),
+        metrics_state=metrics_recorder.init(jit_iterations * 2, env_num),
     )
     step_state = train_n_steps(
         static_state, settings["total_steps"], jit_iterations, step_state

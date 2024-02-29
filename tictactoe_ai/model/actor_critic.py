@@ -87,9 +87,10 @@ class ActorCritic(PyTreeNode):
         # actor loss
         action_probs = v_log_softmax(action_logits)
         selected_action_prob = action_probs[jnp.arange(action_probs.shape[0]), actions]
-        actor_loss = -jnp.mean(selected_action_prob * td_error * importance)
 
-        actor_loss = jnp.where(took_turn, actor_loss, jnp.zeros_like(actor_loss))
+        actor_loss_items = selected_action_prob * td_error * importance
+        td_error = jnp.where(took_turn, actor_loss_items, jnp.zeros_like(actor_loss_items))
+        actor_loss = -jnp.mean(actor_loss_items)
 
         entropy = jnp.mean(v_entropy_loss(action_probs))
 
@@ -151,7 +152,7 @@ class ActorCritic(PyTreeNode):
         took_turn: Bool[Array, "vec"],
     ):
         params, metrics = self.update_model(
-            params, obs, available_actions, actions, rewards, next_obs, done, importance
+            params, obs, available_actions, actions, rewards, next_obs, done, importance, took_turn
         )
 
         # set the importance back to 1 if it's the end of an episode

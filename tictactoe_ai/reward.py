@@ -5,7 +5,7 @@ from functools import partial
 from .gamerules.types import GameState
 
 
-@partial(jax.vmap, (0, None))
+@partial(jax.vmap, in_axes=(0, None))
 def get_reward(state: GameState, player: Int[Scalar, ""]) -> Float[Scalar, ""]:
     result = state["over_result"]
     is_over = result["is_over"]
@@ -14,7 +14,7 @@ def get_reward(state: GameState, player: Int[Scalar, ""]) -> Float[Scalar, ""]:
     return jax.lax.cond(
         is_over,
         lambda: jax.lax.cond(
-            player, lambda: winner, lambda: -winner
+            player == 1, lambda: winner, lambda: -winner
         ).astype(jnp.float32),
         lambda: jnp.float32(0),
     )

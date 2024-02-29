@@ -29,6 +29,8 @@ def play():
         state = turn(state, move)
         display(state)
 
+    print(state["over_result"]["winner"].item())
+
 
 def get_human_move():
     x = int(input("X: "))

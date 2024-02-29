@@ -1,7 +1,7 @@
 from typing import NamedTuple
 from jax import numpy as jnp, Array
-import finished_reward_recorder
-from finished_reward_recorder import (
+from . import finished_reward_recorder
+from .finished_reward_recorder import (
     FinishedRewardRecorderState,
 )
 from .type import Metrics
