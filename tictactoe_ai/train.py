@@ -4,6 +4,10 @@ from typing import Any, NamedTuple
 import jax
 from jax import numpy as jnp, random
 from jaxtyping import PRNGKeyArray, Array, Float
+from orbax.checkpoint import PyTreeCheckpointer
+import json
+import shutil
+from pathlib import Path
 
 from tictactoe_ai.gamerules.initialize import initialize_n_games
 from tictactoe_ai.gamerules.turn import turn, reset_if_done
@@ -19,6 +23,8 @@ from tictactoe_ai.observation import (
 from tictactoe_ai.reward import get_reward, get_done
 from tictactoe_ai.random_player import get_random_move
 from tictactoe_ai.util import split_n
+
+from tictactoe_ai.model.metrics.metrics_logger_np import MetricsLoggerNP
 
 
 class StaticState(NamedTuple):
@@ -51,15 +57,15 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     before_obs = get_observation_vec(env_state, 1)
     available_actions = get_available_actions_vec(env_state)
     #
-    # act_vec = jax.vmap(actor_critic.act, (None, 0, 0, 0))
-    #
-    # rng_key, action_keys = split_n(rng_key, env_num)
-    # actions = act_vec(training_state, before_obs, available_actions, action_keys)
+    act_vec = jax.vmap(actor_critic.act, (None, 0, 0, 0))
 
-    get_random_move_vec = jax.vmap(get_random_move, (0, 0))
     rng_key, action_keys = split_n(rng_key, env_num)
+    actions = act_vec(training_state, before_obs, available_actions, action_keys)
 
-    actions = get_random_move_vec(env_state, action_keys)
+    # get_random_move_vec = jax.vmap(get_random_move, (0, 0))
+    # rng_key, action_keys = split_n(rng_key, env_num)
+    #
+    # actions = get_random_move_vec(env_state, action_keys)
 
     # play the action
     turn_vec = jax.vmap(turn, (0, 0))
@@ -124,12 +130,12 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     )
 
 
-# @partial(jax.jit, static_argnums=(0, 1), donate_argnums=(2,))
+@partial(jax.jit, static_argnums=(0, 1), donate_argnums=(2,))
 def jit_train_n_steps(
     static_state: StaticState, iterations: int, step_state: StepState
 ) -> StepState:
-    metrics = metrics_recorder.reset(step_state.metrics_state)
-    step_state = step_state._replace(metrics_state=metrics)
+    # metrics = metrics_recorder.reset(step_state.metrics_state)
+    # step_state = step_state._replace(metrics_state=metrics)
 
     return jax.lax.fori_loop(
         0, iterations, lambda _, step: train_step(static_state, step), step_state
@@ -144,7 +150,10 @@ def train_n_steps(
 ) -> StepState:
     for i in range(total_iterations // jit_iterations):
         step_state = jit_train_n_steps(static_state, jit_iterations, step_state)
-        print(f"step: {i * jit_iterations}, reward: {step_state.metrics_state.mean_rewards.mean().item()}")
+
+        step = step_state.metrics_state.step
+        rewards = step_state.metrics_state.mean_rewards[step - jit_iterations:step]
+        print(f"step: {i * jit_iterations}, reward: {rewards.mean().item()}")
     return step_state
 
 
@@ -161,7 +170,7 @@ def main():
         critic_hidden_layers=[64],
         actor_last_layer_scale=0.01,
         critic_last_layer_scale=1.0,
-        learning_rate=0.0001,
+        learning_rate=0.000001,
         actor_coef=0.20,
         critic_coef=1.0,
         optimizer="adamw",
@@ -175,6 +184,7 @@ def main():
     rng_key, model_key = random.split(rng_key)
     model_training_state = actor_critic.init(model_key)
 
+    total_steps = settings["total_steps"]
     jit_iterations = 1_000
     env_num = settings["env_num"]
 
@@ -189,11 +199,40 @@ def main():
         env_state=game_state,
         importance=jnp.ones(env_num, dtype=jnp.float32),
         training_state=model_training_state,
-        metrics_state=metrics_recorder.init(jit_iterations * 2, env_num),
+        metrics_state=metrics_recorder.init(total_steps * 2, env_num),
     )
     step_state = train_n_steps(
-        static_state, settings["total_steps"], jit_iterations, step_state
+        static_state, total_steps, jit_iterations, step_state
     )
+
+    metrics_logger = MetricsLoggerNP(total_steps * 2)
+    metrics_logger.log(step_state.metrics_state)
+
+    save_path = Path("./run")
+    create_directory(save_path)
+    save_settings(save_path / "settings.json", settings)
+    save_params(save_path / "model", step_state.training_state.model_params)
+    save_metrics(save_path / "metrics.parquet", metrics_logger)
+
+
+def create_directory(path: Path):
+    if path.exists():
+        shutil.rmtree(path)
+    path.mkdir(parents=True, exist_ok=True)
+
+
+def save_settings(path, settings):
+    with open(path, 'w') as file:
+        json.dump(settings, file, indent=2)
+
+
+def save_params(path: Path, params: Any):
+    checkpointer = PyTreeCheckpointer()
+    checkpointer.save(path.absolute(), params)
+
+
+def save_metrics(path: Path, metrics: MetricsLoggerNP):
+    metrics.get_dataframe().to_parquet(path, index=False)
 
 
 if __name__ == "__main__":

@@ -17,6 +17,10 @@ class MetricsRecorderState(NamedTuple):
     critic_loss: Array
     entropy: Array
 
+    winsA: Array
+    winsB: Array
+    ties: Array
+
 
 def init(capacity: int, vec_num: int) -> MetricsRecorderState:
     return MetricsRecorderState(
@@ -28,6 +32,9 @@ def init(capacity: int, vec_num: int) -> MetricsRecorderState:
         actor_loss=jnp.zeros(capacity, dtype=jnp.float32),
         critic_loss=jnp.zeros(capacity, dtype=jnp.float32),
         entropy=jnp.zeros(capacity, dtype=jnp.float32),
+        winsA=jnp.int32(0),
+        winsB=jnp.int32(0),
+        ties=jnp.int32(0),
     )
 
 
@@ -50,7 +57,7 @@ def update(
     mean_rewards = mean_rewards.at[step].set(finished_rewards.mean())
     step = step + 1
 
-    return MetricsRecorderState(
+    return state._replace(
         step=step,
         finished_reward_recorder_state=finished_reward_recorder_state,
         mean_rewards=mean_rewards,
@@ -65,4 +72,7 @@ def update(
 def reset(state: MetricsRecorderState) -> MetricsRecorderState:
     return state._replace(
         step=jnp.int32(0),
+        winsA=jnp.int32(0),
+        winsB=jnp.int32(0),
+        ties=jnp.int32(0),
     )

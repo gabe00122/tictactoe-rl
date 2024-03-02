@@ -24,16 +24,16 @@ class MetricsLoggerNP:
         self.entropy = np.zeros(total_steps, dtype=np.float32)
 
     def log(self, metrics_frame: MetricsRecorderState):
-        frame_length = len(metrics_frame["mean_rewards"])
+        frame_length = len(metrics_frame.mean_rewards)
         start = self.curser
         end = self.curser + frame_length
 
-        self.mean_rewards[start:end] = metrics_frame["mean_rewards"]
-        self.state_value[start:end] = metrics_frame["state_value"]
-        self.td_error[start:end] = metrics_frame["td_error"]
-        self.actor_loss[start:end] = metrics_frame["actor_loss"]
-        self.critic_loss[start:end] = metrics_frame["critic_loss"]
-        self.entropy[start:end] = metrics_frame["entropy"]
+        self.mean_rewards[start:end] = metrics_frame.mean_rewards
+        self.state_value[start:end] = metrics_frame.state_value
+        self.td_error[start:end] = metrics_frame.td_error
+        self.actor_loss[start:end] = metrics_frame.actor_loss
+        self.critic_loss[start:end] = metrics_frame.critic_loss
+        self.entropy[start:end] = metrics_frame.entropy
 
         self.curser += frame_length
 
