@@ -19,3 +19,6 @@ class ActorCriticModel(nn.Module):
 
         actor_logits = jnp.where(mask, actor_logits, -jnp.inf)
         return actor_logits, jnp.squeeze(critic_value)
+
+    def __hash__(self):
+        return id(self)
