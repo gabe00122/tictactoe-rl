@@ -68,9 +68,8 @@ class ActorCritic(PyTreeNode):
         v_log_softmax = jax.vmap(nn.log_softmax)
 
         action_logits, vf_values = v_model(model_params, obs, available_actions)
-        # print(vf_values.tolist())
 
-        #  available_actions is used for the second call because it must be the right shape but the action output isn't used
+        # available_actions is used for the second call because it must be the right shape but the action output isn't used
         _, next_vf_values = v_model(
             jax.lax.stop_gradient(model_params), next_obs, available_actions
         )
@@ -88,13 +87,15 @@ class ActorCritic(PyTreeNode):
         action_probs = v_log_softmax(action_logits)
         selected_action_prob = action_probs[jnp.arange(action_probs.shape[0]), actions]
 
-        actor_loss_items = selected_action_prob * td_error * importance
-        td_error = jnp.where(took_turn, actor_loss_items, jnp.zeros_like(actor_loss_items))
-        actor_loss = -jnp.mean(actor_loss_items)
+        # actor_loss_items = jnp.where(
+        #     took_turn, actor_loss_items, jnp.zeros_like(actor_loss_items)
+        # )
+        actor_loss = -jnp.mean(selected_action_prob * td_error * importance, where=took_turn)
 
         entropy = jnp.mean(v_entropy_loss(action_probs))
 
         loss = self.actor_coef * actor_loss + critic_loss
+        # jax.debug.breakpoint()
 
         metrics: Metrics = {
             "actor_loss": actor_loss,
@@ -152,7 +153,15 @@ class ActorCritic(PyTreeNode):
         took_turn: Bool[Array, "vec"],
     ):
         params, metrics = self.update_model(
-            params, obs, available_actions, actions, rewards, next_obs, done, importance, took_turn
+            params,
+            obs,
+            available_actions,
+            actions,
+            rewards,
+            next_obs,
+            done,
+            importance,
+            took_turn,
         )
 
         # set the importance back to 1 if it's the end of an episode

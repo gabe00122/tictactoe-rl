@@ -1,17 +1,20 @@
 import jax
 from jax import numpy as jnp
-from jaxtyping import Int, Float, Bool, Scalar
+from jaxtyping import Float, Bool, Scalar
 from functools import partial
 from .gamerules.types import GameState
 
 
 @partial(jax.vmap, in_axes=(0, None))
-def get_reward(state: GameState, player: Int[Scalar, ""]) -> Float[Scalar, ""]:
+def get_reward(state: GameState, player: int) -> Float[Scalar, ""]:
     result = state["over_result"]
 
-    rewards = jnp.array([0, -1, 0, 1], dtype=jnp.float32)
-    reward = rewards[result.game_state]
-    return jax.lax.cond(player == 1, lambda: reward, lambda: -reward)
+    if player == 1:
+        rewards = jnp.array([0, -1, 0, 1], dtype=jnp.float32)
+    else:
+        rewards = jnp.array([0, 1, 0, -1], dtype=jnp.float32)
+
+    return rewards[result.game_state]
 
 
 @jax.vmap

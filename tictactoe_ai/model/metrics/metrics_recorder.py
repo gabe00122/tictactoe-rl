@@ -48,10 +48,8 @@ def update(
     finished_reward_recorder_state = state.finished_reward_recorder_state
     mean_rewards = state.mean_rewards
 
-    finished_reward_recorder_state, finished_rewards = (
-        finished_reward_recorder.update(
-            finished_reward_recorder_state, done, step_rewards
-        )
+    finished_reward_recorder_state, finished_rewards = finished_reward_recorder.update(
+        finished_reward_recorder_state, done, step_rewards
     )
 
     mean_rewards = mean_rewards.at[step].set(finished_rewards.mean())

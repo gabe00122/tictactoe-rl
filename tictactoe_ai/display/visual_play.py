@@ -1,38 +1,34 @@
-from pathlib import Path
 from functools import partial
-import json
+from pathlib import Path
+
 import jax.random
+import orbax.checkpoint as ocp
 import pygame
 import pygame.gfxdraw
+
 from jax import numpy as jnp, random
 from jaxtyping import PRNGKeyArray
-from beartype import beartype
-import orbax.checkpoint as ocp
-from tictactoe_ai.random_player import get_random_move
-from tictactoe_ai.gamerules.types import GameState
+
 from tictactoe_ai.gamerules.initialize import initialize_game
 from tictactoe_ai.gamerules.turn import turn
+from tictactoe_ai.gamerules.types import GameState
 from tictactoe_ai.model.actor_critic import ModelParams
 from tictactoe_ai.model.actor_critic_model import ActorCriticModel
-from tictactoe_ai.model.run_settings import RunSettings
-from tictactoe_ai.observation import get_observation, get_available_actions
 from tictactoe_ai.model.initalize import create_actor_critic
-
+from tictactoe_ai.model.run_settings import load_settings
+from tictactoe_ai.observation import get_observation, get_available_actions
 
 screen_size = 600
 cell_size = screen_size / 3
 margin = 20
 
 
-def load_settings(path: Path) -> RunSettings:
-    with open(path, "r") as file:
-        return json.load(file)
-
-
 def load_params(path: Path, actor_critic: ActorCriticModel) -> ModelParams:
     observation_dummy = jnp.zeros((9 * 3), jnp.float32)
     mask_dummy = jnp.full((9,), True)
-    random_params: ModelParams = actor_critic.init(random.PRNGKey(0), observation_dummy, mask_dummy)
+    random_params: ModelParams = actor_critic.init(
+        random.PRNGKey(0), observation_dummy, mask_dummy
+    )
 
     checkpointer = ocp.PyTreeCheckpointer()
     restore_args = ocp.checkpoint_utils.construct_restore_args(random_params)
@@ -42,7 +38,6 @@ def load_params(path: Path, actor_critic: ActorCriticModel) -> ModelParams:
 
 
 @partial(jax.jit, static_argnums=(1,))
-@beartype
 def play_round(
     player_action,
     actor_critic: ActorCriticModel,
@@ -54,12 +49,12 @@ def play_round(
 
     rng_key, action_key = jax.random.split(rng_key)
 
-    obs = get_observation(game, jnp.int8(-1))
+    obs = get_observation(game, -1)
     mask = get_available_actions(game)
     logits, _ = actor_critic.apply(params, obs, mask)
     action = random.categorical(action_key, logits)
 
-    #action = get_random_move(game, action_key)
+    # action = get_random_move(game, action_key)
     game = turn(game, action)
     return game, rng_key
 
@@ -86,10 +81,13 @@ def play(actor_critic: ActorCriticModel, params: ModelParams):
                 x //= cell_size
                 y //= cell_size
                 index = y * 3 + x
-                #game_state = turn(game_state, jnp.int8(index))
-                game_state, rng_key = play_round(jnp.int8(index), actor_critic, params, game_state, rng_key)
+                # game_state = turn(game_state, jnp.int8(index))
+                game_state, rng_key = play_round(
+                    jnp.int8(index), actor_critic, params, game_state, rng_key
+                )
 
                 board = game_state["board"].flatten().tolist()
+                print(game_state["over_result"].game_state)
 
         # fill the screen with a color to wipe away anything from last frame
         screen.fill("white")
@@ -161,7 +159,7 @@ def render_x(screen: pygame.Surface, pos: tuple[int, int]):
 
 def render_o(screen: pygame.Surface, pos: tuple[int, int]):
     color = "black"
-    line_width = 10
+    line_width = 15
     x, y = pos
 
     x *= cell_size

@@ -10,12 +10,12 @@ class Analysis:
         self.df = df
 
     @classmethod
-    def load(cls, path: Path) -> 'Analysis':
+    def load(cls, path: Path) -> "Analysis":
         return cls(pd.read_parquet(path))
 
     def plot(self):
         df = self.df.rolling(100).mean()
-        #loss = df["critic_loss"]
+        # loss = df["critic_loss"]
 
         df.plot.line()
         plt.show()
@@ -26,5 +26,5 @@ def main():
     analysis.plot()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

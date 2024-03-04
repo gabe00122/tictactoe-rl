@@ -1,6 +1,6 @@
 import jax
 from jaxtyping import Scalar, Int32
-from beartype import beartype
+
 from typing import NamedTuple
 from .gamerules.over import OverResult
 
@@ -12,6 +12,6 @@ class WinMetrics(NamedTuple):
 
 
 @jax.vmap
-@beartype
+
 def record_wins(result: OverResult) -> WinMetrics:
     pass

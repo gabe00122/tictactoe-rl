@@ -5,7 +5,6 @@ import jax
 from jax import numpy as jnp, random
 from jaxtyping import PRNGKeyArray, Array, Float
 from orbax.checkpoint import PyTreeCheckpointer
-import json
 import shutil
 from pathlib import Path
 
@@ -16,15 +15,13 @@ from tictactoe_ai.model.actor_critic import TrainingState
 from tictactoe_ai.model.initalize import create_actor_critic
 from tictactoe_ai.model.metrics import metrics_recorder, MetricsRecorderState
 from tictactoe_ai.model.run_settings import RunSettings
-from tictactoe_ai.observation import (
-    get_available_actions_vec,
-    get_observation_vec
-)
+from tictactoe_ai.observation import get_available_actions_vec, get_observation_vec
 from tictactoe_ai.reward import get_reward, get_done
 from tictactoe_ai.random_player import get_random_move
 from tictactoe_ai.util import split_n
 
 from tictactoe_ai.model.metrics.metrics_logger_np import MetricsLoggerNP
+from tictactoe_ai.model.run_settings import save_settings
 
 
 class StaticState(NamedTuple):
@@ -62,11 +59,6 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     rng_key, action_keys = split_n(rng_key, env_num)
     actions = act_vec(training_state, before_obs, available_actions, action_keys)
 
-    # get_random_move_vec = jax.vmap(get_random_move, (0, 0))
-    # rng_key, action_keys = split_n(rng_key, env_num)
-    #
-    # actions = get_random_move_vec(env_state, action_keys)
-
     # play the action
     turn_vec = jax.vmap(turn, (0, 0))
     env_state = turn_vec(env_state, actions)
@@ -85,7 +77,7 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
         after_obs,
         done,
         importance,
-        jnp.full(env_num, True)
+        jnp.full(env_num, True),
     )
 
     # log training metrics
@@ -93,6 +85,9 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
 
     # reset
     env_state = jax.vmap(reset_if_done)(env_state)
+
+    # re-poll this in case of game over
+    after_obs = get_observation_vec(env_state, 1)
 
     # play a move as a random opponent
     get_random_move_vec = jax.vmap(get_random_move, (0, 0))
@@ -115,7 +110,7 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
         opponent_after_state,
         done,
         importance,
-        jnp.full(env_num, False)
+        jnp.full(env_num, False),
     )
 
     # log training metrics
@@ -149,7 +144,7 @@ def train_n_steps(
         step_state = jit_train_n_steps(static_state, jit_iterations, step_state)
 
         step = step_state.metrics_state.step
-        rewards = step_state.metrics_state.mean_rewards[step - jit_iterations:step]
+        rewards = step_state.metrics_state.mean_rewards[step - jit_iterations : step]
         print(f"step: {i * jit_iterations}, reward: {rewards.mean().item()}")
     return step_state
 
@@ -159,15 +154,15 @@ def main():
         git_hash="blank",
         env_name="tictactoe",
         seed=4321,
-        total_steps=500_000,
-        env_num=128,
+        total_steps=50_000,
+        env_num=64,
         discount=0.99,
         root_hidden_layers=[128, 128],
         actor_hidden_layers=[64],
         critic_hidden_layers=[64],
         actor_last_layer_scale=0.01,
         critic_last_layer_scale=1.0,
-        learning_rate=0.000001,
+        learning_rate=0.0001,
         actor_coef=0.20,
         critic_coef=1.0,
         optimizer="adamw",
@@ -198,9 +193,7 @@ def main():
         training_state=model_training_state,
         metrics_state=metrics_recorder.init(total_steps * 2, env_num),
     )
-    step_state = train_n_steps(
-        static_state, total_steps, jit_iterations, step_state
-    )
+    step_state = train_n_steps(static_state, total_steps, jit_iterations, step_state)
 
     metrics_logger = MetricsLoggerNP(total_steps * 2)
     metrics_logger.log(step_state.metrics_state)
@@ -216,11 +209,6 @@ def create_directory(path: Path):
     if path.exists():
         shutil.rmtree(path)
     path.mkdir(parents=True, exist_ok=True)
-
-
-def save_settings(path, settings):
-    with open(path, 'w') as file:
-        json.dump(settings, file, indent=2)
 
 
 def save_params(path: Path, params: Any):
