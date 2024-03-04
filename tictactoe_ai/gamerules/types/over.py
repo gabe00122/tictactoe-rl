@@ -1,7 +1,6 @@
-from typing import TypedDict
-from jaxtyping import Scalar, Bool, Int8
+from typing import NamedTuple
+from jaxtyping import Scalar, Bool, Int32
 
 
-class OverResult(TypedDict):
-    is_over: Bool[Scalar, ""]
-    winner: Int8[Scalar, ""]  # 0 is a draw
+class OverResult(NamedTuple):
+    game_state: Int32[Scalar, ""]  # ongoing, o won, tied, x won

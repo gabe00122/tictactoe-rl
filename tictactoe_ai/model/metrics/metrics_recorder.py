@@ -17,8 +17,8 @@ class MetricsRecorderState(NamedTuple):
     critic_loss: Array
     entropy: Array
 
-    winsA: Array
-    winsB: Array
+    winsX: Array
+    winsO: Array
     ties: Array
 
 
@@ -32,8 +32,8 @@ def init(capacity: int, vec_num: int) -> MetricsRecorderState:
         actor_loss=jnp.zeros(capacity, dtype=jnp.float32),
         critic_loss=jnp.zeros(capacity, dtype=jnp.float32),
         entropy=jnp.zeros(capacity, dtype=jnp.float32),
-        winsA=jnp.int32(0),
-        winsB=jnp.int32(0),
+        winsX=jnp.int32(0),
+        winsO=jnp.int32(0),
         ties=jnp.int32(0),
     )
 

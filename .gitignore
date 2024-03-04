@@ -5,3 +5,5 @@ __pycache__
 .fleet/
 
 run/
+
+.ipynb_checkpoints

@@ -112,9 +112,9 @@ def render(screen: pygame.Surface, board: list[int]):
         x = i % 3
         y = i // 3
         match cell:
-            case -1:
-                render_x(screen, (x, y))
             case 1:
+                render_x(screen, (x, y))
+            case -1:
                 render_o(screen, (x, y))
 
 

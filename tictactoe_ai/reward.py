@@ -8,18 +8,12 @@ from .gamerules.types import GameState
 @partial(jax.vmap, in_axes=(0, None))
 def get_reward(state: GameState, player: Int[Scalar, ""]) -> Float[Scalar, ""]:
     result = state["over_result"]
-    is_over = result["is_over"]
-    winner = result["winner"]
 
-    return jax.lax.cond(
-        is_over,
-        lambda: jax.lax.cond(
-            player == 1, lambda: winner, lambda: -winner
-        ).astype(jnp.float32),
-        lambda: jnp.float32(0),
-    )
+    rewards = jnp.array([0, -1, 0, 1], dtype=jnp.float32)
+    reward = rewards[result.game_state]
+    return jax.lax.cond(player == 1, lambda: reward, lambda: -reward)
 
 
 @jax.vmap
 def get_done(state: GameState) -> Bool[Scalar, ""]:
-    return state["over_result"]["is_over"]
+    return jnp.not_equal(state["over_result"].game_state, 0)

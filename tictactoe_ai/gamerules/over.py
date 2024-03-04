@@ -14,20 +14,13 @@ def check_gameover(board: Int8[Array, "3 3"]) -> OverResult:
 
     def some_winner():
         winner = jnp.argmax(winners)
-        winner = jax.lax.cond(winner == 0, lambda: jnp.int8(-1), lambda: jnp.int8(1))
-        return {
-            "is_over": True,
-            "winner": winner,
-        }
+        return jax.lax.cond(winner == 0, lambda: jnp.int32(1), lambda: jnp.int32(3))
 
     def no_winner():
         no_space_left = check_no_space_left(board)
-        return {
-            "is_over": no_space_left,
-            "winner": jnp.int8(0),
-        }
+        return jax.lax.cond(no_space_left, lambda: jnp.int32(2), lambda: jnp.int32(0))
 
-    return jax.lax.cond(is_winner, some_winner, no_winner)
+    return OverResult(jax.lax.cond(is_winner, some_winner, no_winner))
 
 
 def check_player_won(

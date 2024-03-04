@@ -134,9 +134,6 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
 def jit_train_n_steps(
     static_state: StaticState, iterations: int, step_state: StepState
 ) -> StepState:
-    # metrics = metrics_recorder.reset(step_state.metrics_state)
-    # step_state = step_state._replace(metrics_state=metrics)
-
     return jax.lax.fori_loop(
         0, iterations, lambda _, step: train_step(static_state, step), step_state
     )
