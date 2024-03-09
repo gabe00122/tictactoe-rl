@@ -53,7 +53,7 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     # pick an action
     before_obs = get_observation_vec(env_state, 1)
     available_actions = get_available_actions_vec(env_state)
-    #
+
     act_vec = jax.vmap(actor_critic.act, (None, 0, 0, 0))
 
     rng_key, action_keys = split_n(rng_key, env_num)
@@ -77,7 +77,7 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
         after_obs,
         done,
         importance,
-        jnp.full(env_num, True),
+        True,
     )
 
     # log training metrics
@@ -90,9 +90,12 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     after_obs = get_observation_vec(env_state, 1)
 
     # play a move as a random opponent
-    get_random_move_vec = jax.vmap(get_random_move, (0, 0))
     rng_key, action_keys = split_n(rng_key, env_num)
 
+    # opponent_obs = get_observation_vec(env_state, -1)
+    # available_actions = get_available_actions_vec(env_state)
+    # opponent_actions = act_vec(training_state, opponent_obs, available_actions, action_keys)
+    get_random_move_vec = jax.vmap(get_random_move, (0, 0))
     opponent_actions = get_random_move_vec(env_state, action_keys)
     env_state = turn_vec(env_state, opponent_actions)
 
@@ -110,7 +113,7 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
         opponent_after_state,
         done,
         importance,
-        jnp.full(env_num, False),
+        False,
     )
 
     # log training metrics
@@ -153,20 +156,20 @@ def main():
     settings = RunSettings(
         git_hash="blank",
         env_name="tictactoe",
-        seed=4321,
+        seed=33,
         total_steps=50_000,
         env_num=64,
         discount=0.99,
-        root_hidden_layers=[128, 128],
+        root_hidden_layers=[64, 64],
         actor_hidden_layers=[64],
         critic_hidden_layers=[64],
         actor_last_layer_scale=0.01,
         critic_last_layer_scale=1.0,
-        learning_rate=0.0001,
-        actor_coef=0.20,
+        learning_rate=0.001,
+        actor_coef=0.15,
         critic_coef=1.0,
         optimizer="adamw",
-        adam_beta=0.97,
+        adam_beta=0.997,
         weight_decay=0.001,
     )
 
@@ -198,7 +201,7 @@ def main():
     metrics_logger = MetricsLoggerNP(total_steps * 2)
     metrics_logger.log(step_state.metrics_state)
 
-    save_path = Path("./run")
+    save_path = Path("./run-selfplay")
     create_directory(save_path)
     save_settings(save_path / "settings.json", settings)
     save_params(save_path / "model", step_state.training_state.model_params)

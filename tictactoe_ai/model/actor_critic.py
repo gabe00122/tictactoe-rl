@@ -61,7 +61,7 @@ class ActorCritic(PyTreeNode):
         next_obs: Float32[Array, "vec 9 3"],
         done: Bool[Array, "vec"],
         importance: Float32[Array, "vec"],
-        took_turn: Bool[Array, "vec"],
+        took_turn: bool,
     ) -> tuple[Float32[Scalar, ""], Metrics]:
         v_model = jax.vmap(self.model.apply, (None, 0, 0), (0, 0))
         v_entropy_loss = jax.vmap(entropy_loss)
@@ -90,12 +90,14 @@ class ActorCritic(PyTreeNode):
         # actor_loss_items = jnp.where(
         #     took_turn, actor_loss_items, jnp.zeros_like(actor_loss_items)
         # )
-        actor_loss = -jnp.mean(selected_action_prob * td_error * importance, where=took_turn)
+        actor_loss = -jnp.mean(selected_action_prob * td_error * importance)
 
         entropy = jnp.mean(v_entropy_loss(action_probs))
 
-        loss = self.actor_coef * actor_loss + critic_loss
-        # jax.debug.breakpoint()
+        if took_turn:
+            loss = self.actor_coef * actor_loss + critic_loss
+        else:
+            loss = critic_loss
 
         metrics: Metrics = {
             "actor_loss": actor_loss,
@@ -117,7 +119,7 @@ class ActorCritic(PyTreeNode):
         next_obs: Float32[Array, "vec 9 3"],
         done: Bool[Array, "vec"],
         importance: Float32[Array, "vec"],
-        took_turn: Bool[Array, "vec"],
+        took_turn: bool,
     ):
         loss_fn = jax.value_and_grad(self.loss, has_aux=True)
         (loss, metrics), grad = loss_fn(
@@ -150,7 +152,7 @@ class ActorCritic(PyTreeNode):
         next_obs: Float32[Array, "vec 9 3"],
         done: Bool[Array, "vec"],
         importance: Float32[Array, "vec"],
-        took_turn: Bool[Array, "vec"],
+        took_turn: bool,
     ):
         params, metrics = self.update_model(
             params,

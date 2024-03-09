@@ -5,5 +5,6 @@ __pycache__
 .fleet/
 
 run/
+run-selfplay/
 
 .ipynb_checkpoints

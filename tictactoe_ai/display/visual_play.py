@@ -4,13 +4,12 @@ from pathlib import Path
 import jax.random
 import orbax.checkpoint as ocp
 import pygame
-import pygame.gfxdraw
 
 from jax import numpy as jnp, random
 from jaxtyping import PRNGKeyArray
 
 from tictactoe_ai.gamerules.initialize import initialize_game
-from tictactoe_ai.gamerules.turn import turn
+from tictactoe_ai.gamerules.turn import turn, reset_if_done
 from tictactoe_ai.gamerules.types import GameState
 from tictactoe_ai.model.actor_critic import ModelParams
 from tictactoe_ai.model.actor_critic_model import ActorCriticModel
@@ -45,13 +44,16 @@ def play_round(
     game: GameState,
     rng_key: PRNGKeyArray,
 ) -> tuple[GameState, PRNGKeyArray]:
+    game = reset_if_done(game)
     game = turn(game, player_action)
 
     rng_key, action_key = jax.random.split(rng_key)
 
     obs = get_observation(game, -1)
     mask = get_available_actions(game)
-    logits, _ = actor_critic.apply(params, obs, mask)
+    logits, value = actor_critic.apply(params, obs, mask)
+    jax.debug.print("{}\n{}", logits, value)
+
     action = random.categorical(action_key, logits)
 
     # action = get_random_move(game, action_key)
@@ -175,7 +177,7 @@ def render_o(screen: pygame.Surface, pos: tuple[int, int]):
 
 
 def main():
-    path = Path("./run")
+    path = Path("./run-selfplay")
     settings = load_settings(path / "settings.json")
     actor_critic = create_actor_critic(settings)
     model = actor_critic.model
