@@ -1,6 +1,6 @@
 import jax
 from jax import numpy as jnp
-from jaxtyping import Array, Scalar, Float, Int, Bool
+from jaxtyping import Array, Float, Bool
 
 from .gamerules.types import GameState
 

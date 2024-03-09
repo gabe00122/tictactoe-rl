@@ -89,7 +89,7 @@ def play(actor_critic: ActorCriticModel, params: ModelParams):
                 )
 
                 board = game_state["board"].flatten().tolist()
-                print(game_state["over_result"].game_state)
+                print(game_state["over_result"])
 
         # fill the screen with a color to wipe away anything from last frame
         screen.fill("white")

@@ -3,8 +3,6 @@ from jaxtyping import PRNGKeyArray
 from jax import numpy as jnp, random
 
 
-
-
 def get_random_move(state: GameState, rng_key: PRNGKeyArray):
     board = state["board"]
     available_moves = board.flatten() == 0

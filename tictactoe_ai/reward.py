@@ -14,9 +14,9 @@ def get_reward(state: GameState, player: int) -> Float[Scalar, ""]:
     else:
         rewards = jnp.array([0, 1, 0, -1], dtype=jnp.float32)
 
-    return rewards[result.game_state]
+    return rewards[result]
 
 
 @jax.vmap
 def get_done(state: GameState) -> Bool[Scalar, ""]:
-    return jnp.not_equal(state["over_result"].game_state, 0)
+    return jnp.not_equal(state["over_result"], 0)

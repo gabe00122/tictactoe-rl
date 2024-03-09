@@ -1,8 +1,7 @@
-from .types.state import GameState, OverResult
+from .types.state import GameState
 from .over import check_gameover
 from .initialize import initialize_game
 import jax
-from jax import numpy as jnp
 from jaxtyping import Scalar, Int8
 
 
@@ -24,7 +23,7 @@ def turn(state: GameState, action: Int8[Scalar, ""]) -> GameState:
 
 def reset_if_done(state: GameState):
     return jax.lax.cond(
-        state["over_result"].game_state != 0,
+        state["over_result"] != 0,
         lambda: initialize_game() | {"active_player": state["active_player"]},
         lambda: state,
     )
