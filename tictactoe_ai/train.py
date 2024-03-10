@@ -1,27 +1,26 @@
+import shutil
 from functools import partial
+from pathlib import Path
 from typing import Any, NamedTuple
 
 import jax
 from jax import numpy as jnp, random
 from jaxtyping import PRNGKeyArray, Array, Float
 from orbax.checkpoint import PyTreeCheckpointer
-import shutil
-from pathlib import Path
 
 from tictactoe_ai.gamerules.initialize import initialize_n_games
 from tictactoe_ai.gamerules.turn import turn, reset_if_done
+from tictactoe_ai.metrics import metrics_recorder, MetricsRecorderState
+from tictactoe_ai.metrics.metrics_logger_np import MetricsLoggerNP
+from tictactoe_ai.minimax.minmax_player import get_action
 from tictactoe_ai.model.actor_critic import ActorCritic
 from tictactoe_ai.model.actor_critic import TrainingState
 from tictactoe_ai.model.initalize import create_actor_critic
-from tictactoe_ai.metrics import metrics_recorder, MetricsRecorderState
 from tictactoe_ai.model.run_settings import RunSettings
+from tictactoe_ai.model.run_settings import save_settings
 from tictactoe_ai.observation import get_available_actions_vec, get_observation_vec
 from tictactoe_ai.reward import get_reward, get_done
-from tictactoe_ai.random_player import get_random_move
 from tictactoe_ai.util import split_n
-
-from tictactoe_ai.metrics.metrics_logger_np import MetricsLoggerNP
-from tictactoe_ai.model.run_settings import save_settings
 
 
 class StaticState(NamedTuple):
@@ -35,6 +34,9 @@ class StepState(NamedTuple):
     env_state: Any  # vectorized GameState
     importance: Float[Array, "vec"]
     metrics_state: MetricsRecorderState
+
+
+optimal_play = jnp.load("./optimal_play.npy")
 
 
 def train_step(static_state: StaticState, step_state: StepState) -> StepState:
@@ -95,8 +97,8 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     # opponent_obs = get_observation_vec(env_state, -1)
     # available_actions = get_available_actions_vec(env_state)
     # opponent_actions = act_vec(training_state, opponent_obs, available_actions, action_keys)
-    get_random_move_vec = jax.vmap(get_random_move, (0, 0))
-    opponent_actions = get_random_move_vec(env_state, action_keys)
+    get_random_move_vec = jax.vmap(get_action, (None, 0, 0))
+    opponent_actions = get_random_move_vec(optimal_play, env_state, action_keys)
     env_state = turn_vec(env_state, opponent_actions)
 
     # train the critic from the other state transition

@@ -4,7 +4,6 @@ from pathlib import Path
 import jax.random
 import orbax.checkpoint as ocp
 import pygame
-
 from jax import numpy as jnp, random
 from jaxtyping import PRNGKeyArray
 
@@ -15,7 +14,6 @@ from tictactoe_ai.model.actor_critic import ModelParams
 from tictactoe_ai.model.actor_critic_model import ActorCriticModel
 from tictactoe_ai.model.initalize import create_actor_critic
 from tictactoe_ai.model.run_settings import load_settings
-from tictactoe_ai.observation import get_observation, get_available_actions
 
 screen_size = 600
 cell_size = screen_size / 3
@@ -36,6 +34,10 @@ def load_params(path: Path, actor_critic: ActorCriticModel) -> ModelParams:
     )
 
 
+from tictactoe_ai.minimax.minmax_player import get_action
+optimal_play = jnp.load("./optimal_play.npy")
+
+
 @partial(jax.jit, static_argnums=(1,))
 def play_round(
     player_action,
@@ -49,12 +51,13 @@ def play_round(
 
     rng_key, action_key = jax.random.split(rng_key)
 
-    obs = get_observation(game, -1)
-    mask = get_available_actions(game)
-    logits, value = actor_critic.apply(params, obs, mask)
-    jax.debug.print("{}\n{}", logits, value)
+    # obs = get_observation(game, -1)
+    # mask = get_available_actions(game)
+    # logits, value = actor_critic.apply(params, obs, mask)
+    # jax.debug.print("{}\n{}", logits, value)
 
-    action = random.categorical(action_key, logits)
+    # action = random.categorical(action_key, logits)
+    action = get_action(optimal_play, game, action_key)
 
     # action = get_random_move(game, action_key)
     game = turn(game, action)
