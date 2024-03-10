@@ -18,6 +18,7 @@ from tictactoe_ai.model.run_settings import RunSettings
 from tictactoe_ai.observation import get_available_actions_vec, get_observation_vec
 from tictactoe_ai.reward import get_reward, get_done
 from tictactoe_ai.random_player import get_random_move
+from tictactoe_ai.minmax.minmax_player import get_action
 from tictactoe_ai.util import split_n
 
 from tictactoe_ai.model.metrics.metrics_logger_np import MetricsLoggerNP
@@ -35,6 +36,9 @@ class StepState(NamedTuple):
     env_state: Any  # vectorized GameState
     importance: Float[Array, "vec"]
     metrics_state: MetricsRecorderState
+
+
+optimal_play = jnp.load("./optimal_play.npy")
 
 
 def train_step(static_state: StaticState, step_state: StepState) -> StepState:
@@ -95,8 +99,8 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     # opponent_obs = get_observation_vec(env_state, -1)
     # available_actions = get_available_actions_vec(env_state)
     # opponent_actions = act_vec(training_state, opponent_obs, available_actions, action_keys)
-    get_random_move_vec = jax.vmap(get_random_move, (0, 0))
-    opponent_actions = get_random_move_vec(env_state, action_keys)
+    get_random_move_vec = jax.vmap(get_action, (None, 0, 0))
+    opponent_actions = get_random_move_vec(optimal_play, env_state, action_keys)
     env_state = turn_vec(env_state, opponent_actions)
 
     # train the critic from the other state transition

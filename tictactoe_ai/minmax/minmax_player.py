@@ -7,7 +7,6 @@ from tictactoe_ai.gamerules.types import GameState
 def get_action(optimal_play, game: GameState, rng_key):
     board = (game["board"] + 1).flatten()
     action_values = optimal_play[*board]
-    jax.debug.print("{}", action_values)
 
     action_mask = board == 1
     action_values *= -game["active_player"]
