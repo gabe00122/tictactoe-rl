@@ -13,14 +13,14 @@ from tictactoe_ai.gamerules.turn import turn, reset_if_done
 from tictactoe_ai.model.actor_critic import ActorCritic
 from tictactoe_ai.model.actor_critic import TrainingState
 from tictactoe_ai.model.initalize import create_actor_critic
-from tictactoe_ai.model.metrics import metrics_recorder, MetricsRecorderState
+from tictactoe_ai.metrics import metrics_recorder, MetricsRecorderState
 from tictactoe_ai.model.run_settings import RunSettings
 from tictactoe_ai.observation import get_available_actions_vec, get_observation_vec
 from tictactoe_ai.reward import get_reward, get_done
 from tictactoe_ai.random_player import get_random_move
 from tictactoe_ai.util import split_n
 
-from tictactoe_ai.model.metrics.metrics_logger_np import MetricsLoggerNP
+from tictactoe_ai.metrics.metrics_logger_np import MetricsLoggerNP
 from tictactoe_ai.model.run_settings import save_settings
 
 

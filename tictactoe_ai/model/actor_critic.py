@@ -7,7 +7,7 @@ from flax.struct import PyTreeNode
 import optax
 from jaxtyping import Array, Scalar, Float32, Bool, PRNGKeyArray, Int
 from .actor_critic_model import ActorCriticModel
-from .metrics.type import Metrics
+from tictactoe_ai.metrics.types import Metrics
 from .entropy import entropy_loss
 
 

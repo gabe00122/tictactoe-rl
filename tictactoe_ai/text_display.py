@@ -1,8 +1,8 @@
-from .gamerules.types.state import GameState
+from .gamerules.types import GameState
 
 
 def display(state: GameState):
-    board = state["board"].tolist()
+    board = state.board.tolist()
     board_str = ""
 
     for row in reversed(board):

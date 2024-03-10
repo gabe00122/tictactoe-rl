@@ -4,7 +4,7 @@ from jax import numpy as jnp, random
 
 
 def get_random_move(state: GameState, rng_key: PRNGKeyArray):
-    board = state["board"]
+    board = state.board
     available_moves = board.flatten() == 0
 
     count = jnp.count_nonzero(available_moves)

@@ -4,7 +4,7 @@ from . import finished_reward_recorder
 from .finished_reward_recorder import (
     FinishedRewardRecorderState,
 )
-from .type import Metrics
+from .types import Metrics
 
 
 class MetricsRecorderState(NamedTuple):
@@ -70,7 +70,5 @@ def update(
 def reset(state: MetricsRecorderState) -> MetricsRecorderState:
     return state._replace(
         step=jnp.int32(0),
-        winsA=jnp.int32(0),
-        winsB=jnp.int32(0),
         ties=jnp.int32(0),
     )

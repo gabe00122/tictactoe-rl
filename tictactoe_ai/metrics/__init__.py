@@ -2,7 +2,7 @@ from .finished_reward_recorder import (
     FinishedRewardRecorderState,
 )
 from .metrics_recorder import MetricsRecorderState
-from .type import Metrics
+from .types import Metrics
 
 
 __all__ = [

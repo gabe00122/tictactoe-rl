@@ -1,6 +1,7 @@
 from typing import NamedTuple
 from jax import numpy as jnp, Array
 
+# This file is for recording the cumulative rewards for an episode
 
 class FinishedRewardRecorderState(NamedTuple):
     finished_episode_rewards: Array

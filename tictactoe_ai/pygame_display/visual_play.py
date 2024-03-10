@@ -97,7 +97,7 @@ def play(actor_critic: ActorCriticModel, params: ModelParams):
         # RENDER YOUR GAME HERE
         render(screen, board)
 
-        # flip() the display to put your work on screen
+        # flip() the pygame_display to put your work on screen
         pygame.display.flip()
 
         clock.tick(60)  # limits FPS to 60
