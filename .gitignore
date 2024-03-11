@@ -8,3 +8,5 @@ run/
 run-selfplay/
 
 .ipynb_checkpoints
+
+optimal_play.npy

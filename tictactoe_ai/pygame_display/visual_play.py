@@ -34,7 +34,7 @@ def load_params(path: Path, actor_critic: ActorCriticModel) -> ModelParams:
     )
 
 
-from tictactoe_ai.minimax.minmax_player import get_action
+from tictactoe_ai.minmax.minmax_player import get_action
 optimal_play = jnp.load("./optimal_play.npy")
 
 

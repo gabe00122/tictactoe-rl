@@ -12,7 +12,7 @@ from tictactoe_ai.gamerules.initialize import initialize_n_games
 from tictactoe_ai.gamerules.turn import turn, reset_if_done
 from tictactoe_ai.metrics import metrics_recorder, MetricsRecorderState
 from tictactoe_ai.metrics.metrics_logger_np import MetricsLoggerNP
-from tictactoe_ai.minimax.minmax_player import get_action
+from tictactoe_ai.minmax.minmax_player import get_action
 from tictactoe_ai.model.actor_critic import ActorCritic
 from tictactoe_ai.model.actor_critic import TrainingState
 from tictactoe_ai.model.initalize import create_actor_critic
