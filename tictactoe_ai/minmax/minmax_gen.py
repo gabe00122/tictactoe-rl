@@ -10,13 +10,15 @@ turn = jax.jit(turn)
 
 
 # key: o_wins, ties, x_wins
-
+EMPTY = -2
+O_PLAYER = -1
+X_PLAYER = 1
 
 def minmax(states, state_actions, state: GameState):
     board = state.board.flatten().tolist()
     index = [x + 1 for x in board]
 
-    if states[*index] != -2:
+    if states[*index] != EMPTY:
         return states[*index]
 
     if state.over_result != 0:
@@ -33,13 +35,12 @@ def minmax(states, state_actions, state: GameState):
                 if first:
                     value = child_value
                     first = False
-                elif (state.active_player == -1 and child_value < value) or (state.active_player == 1 and child_value > value):
+                elif (state.active_player == O_PLAYER and child_value < value) or (state.active_player == X_PLAYER and child_value > value):
                     value = child_value
 
     states[*index] = value
     return value
 
-EMPTY = -2
 
 def main():
     states = np.full(
