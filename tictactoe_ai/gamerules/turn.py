@@ -2,7 +2,7 @@ from .types import GameState
 from .over import check_game_over
 from .initialize import initialize_game
 import jax
-from jaxtyping import ScalarLike, Int
+from jaxtyping import ScalarLike, Int, PRNGKeyArray
 
 
 def turn(state: GameState, action: Int[ScalarLike, ""]) -> GameState:
@@ -21,9 +21,10 @@ def turn(state: GameState, action: Int[ScalarLike, ""]) -> GameState:
     )
 
 
-def reset_if_done(state: GameState):
+def reset_if_done(state: GameState, rng_key: PRNGKeyArray) -> GameState:
     return jax.lax.cond(
         state.over_result != 0,
-        lambda: initialize_game()._replace(active_player=state.active_player),
+        lambda: initialize_game(rng_key),
         lambda: state,
     )
+

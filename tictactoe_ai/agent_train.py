@@ -5,24 +5,18 @@ from typing import Any, NamedTuple
 
 import jax
 from jax import numpy as jnp, random
-from jaxtyping import PRNGKeyArray, Array, Float
+from jaxtyping import PRNGKeyArray
 from orbax.checkpoint import PyTreeCheckpointer
 
+from tictactoe_ai.agent import Agent
 from tictactoe_ai.gamerules.initialize import initialize_n_games
 from tictactoe_ai.gamerules.turn import turn, reset_if_done
 from tictactoe_ai.gamerules.types import VectorizedGameState
 from tictactoe_ai.metrics import metrics_recorder, MetricsRecorderState
 from tictactoe_ai.metrics.metrics_logger_np import MetricsLoggerNP
-from tictactoe_ai.minmax.minmax_player import get_action
-from tictactoe_ai.model.actor_critic import ActorCritic
-from tictactoe_ai.model.actor_critic import TrainingState
-from tictactoe_ai.model.initalize import create_actor_critic
-from tictactoe_ai.model.run_settings import RunSettings
 from tictactoe_ai.model.run_settings import save_settings
-from tictactoe_ai.observation import get_available_actions_vec, get_observation_vec
-from tictactoe_ai.reward import get_reward, get_done
 from tictactoe_ai.util import split_n
-from tictactoe_ai.agent import Agent
+from tictactoe_ai.random_agent import RandomAgent
 
 
 class StaticState(NamedTuple):
@@ -33,100 +27,50 @@ class StaticState(NamedTuple):
 
 class StepState(NamedTuple):
     rng_key: PRNGKeyArray
-    agent_a_state: Any
-    agent_b_state: Any
+    state_a: Any
+    state_b: Any
     env_state: VectorizedGameState
     metrics_state: MetricsRecorderState
+    game_outcomes: Any
 
 
 def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     env_num = static_state.env_num
-    actor_critic = static_state.actor_critic
+    agent_a = static_state.agent_a
+    agent_b = static_state.agent_b
 
     rng_key = step_state.rng_key
-    training_state = step_state.training_state
+    state_a = step_state.state_a
+    state_b = step_state.state_b
     env_state = step_state.env_state
-    importance = step_state.importance
     metrics_state = step_state.metrics_state
+    game_outcomes = step_state.game_outcomes
+
+    def get_actions(a, b, state, a_keys):
+        actions_a = agent_a.act(a, state, a_keys)
+        actions_b = agent_b.act(b, state, a_keys)
+        return jnp.where(state.active_player, actions_a, actions_b)
 
     # reset finished games
-    env_state = jax.vmap(reset_if_done)(env_state)
+    rng_key, initialize_keys = split_n(rng_key, env_num)
+    env_state = jax.vmap(reset_if_done)(env_state, initialize_keys)
 
     # pick an action
-    before_obs = get_observation_vec(env_state, 1)
-    available_actions = get_available_actions_vec(env_state)
-
-    act_vec = jax.vmap(actor_critic.act, (None, 0, 0, 0))
-
     rng_key, action_keys = split_n(rng_key, env_num)
-    actions = act_vec(training_state, before_obs, available_actions, action_keys)
+    actions = get_actions(state_a, state_b, env_state, action_keys)
 
     # play the action
-    turn_vec = jax.vmap(turn, (0, 0))
-    env_state = turn_vec(env_state, actions)
+    env_state = jax.vmap(turn, (0, 0))(env_state, actions)
 
-    # gather the after state info to learn from later
-    after_obs = get_observation_vec(env_state, 1)
-    reward = get_reward(env_state, 1)
-    done = get_done(env_state)
-
-    training_state, metrics, importance = actor_critic.train_step(
-        training_state,
-        before_obs,
-        available_actions,
-        actions,
-        reward,
-        after_obs,
-        done,
-        importance,
-        True,
-    )
-
-    # log training metrics
-    metrics_state = metrics_recorder.update(metrics_state, done, reward, metrics)
-
-    # reset
-    env_state = jax.vmap(reset_if_done)(env_state)
-
-    # re-poll this in case of game over
-    after_obs = get_observation_vec(env_state, 1)
-
-    # play a move as a random opponent
-    rng_key, action_keys = split_n(rng_key, env_num)
-
-    # opponent_obs = get_observation_vec(env_state, -1)
-    # available_actions = get_available_actions_vec(env_state)
-    # opponent_actions = act_vec(training_state, opponent_obs, available_actions, action_keys)
-    get_random_move_vec = jax.vmap(get_action, (None, 0, 0))
-    opponent_actions = get_random_move_vec(optimal_play, env_state, action_keys)
-    env_state = turn_vec(env_state, opponent_actions)
-
-    # train the critic from the other state transition
-    opponent_after_state = get_observation_vec(env_state, 1)
-    reward = get_reward(env_state, 1)
-    done = get_done(env_state)
-
-    training_state, metrics, importance = actor_critic.train_step(
-        training_state,
-        after_obs,
-        available_actions,  # ignored
-        actions,  # ignored
-        reward,
-        opponent_after_state,
-        done,
-        importance,
-        False,
-    )
-
-    # log training metrics
-    metrics_state = metrics_recorder.update(metrics_state, done, reward, metrics)
+    game_outcomes += jax.nn.one_hot(env_state.over_result - 1, 3, dtype=jnp.int32).sum(0)
 
     return StepState(
-        env_state=env_state,
-        importance=importance,
         rng_key=rng_key,
-        training_state=training_state,
+        state_a=state_a,
+        state_b=state_b,
+        env_state=env_state,
         metrics_state=metrics_state,
+        game_outcomes=game_outcomes,
     )
 
 
@@ -155,58 +99,41 @@ def train_n_steps(
 
 
 def main():
-    settings = RunSettings(
-        git_hash="blank",
-        env_name="tictactoe",
-        seed=33,
-        total_steps=50_000,
-        env_num=64,
-        discount=0.99,
-        root_hidden_layers=[64, 64],
-        actor_hidden_layers=[64],
-        critic_hidden_layers=[64],
-        actor_last_layer_scale=0.01,
-        critic_last_layer_scale=1.0,
-        learning_rate=0.001,
-        actor_coef=0.15,
-        critic_coef=1.0,
-        optimizer="adamw",
-        adam_beta=0.997,
-        weight_decay=0.001,
-    )
+    rng_key = random.PRNGKey(123)
 
-    rng_key = random.PRNGKey(settings["seed"])
-    actor_critic = create_actor_critic(settings)
-
-    rng_key, model_key = random.split(rng_key)
-    model_training_state = actor_critic.init(model_key)
-
-    total_steps = settings["total_steps"]
+    total_steps = 5000
     jit_iterations = 1_000
-    env_num = settings["env_num"]
+    env_num = 128
 
     static_state = StaticState(
-        env_num=settings["env_num"],
-        actor_critic=actor_critic,
+        env_num=env_num,
+        agent_a=RandomAgent(),
+        agent_b=RandomAgent(),
     )
 
-    game_state = initialize_n_games(env_num)
+    rng_key, game_keys = split_n(rng_key, env_num)
+    game_state = initialize_n_games(game_keys)
+
+    rng_key, agent_a_key, agent_b_key = random.split(rng_key, 3)
     step_state = StepState(
         rng_key=rng_key,
+        state_a=static_state.agent_a.initialize(agent_a_key),
+        state_b=static_state.agent_b.initialize(agent_b_key),
         env_state=game_state,
-        importance=jnp.ones(env_num, dtype=jnp.float32),
-        training_state=model_training_state,
         metrics_state=metrics_recorder.init(total_steps * 2, env_num),
+        game_outcomes=jnp.zeros(3, dtype=jnp.int32)
     )
     step_state = train_n_steps(static_state, total_steps, jit_iterations, step_state)
+
+    print(step_state.game_outcomes)
 
     metrics_logger = MetricsLoggerNP(total_steps * 2)
     metrics_logger.log(step_state.metrics_state)
 
     save_path = Path("./run-selfplay")
     create_directory(save_path)
-    save_settings(save_path / "settings.json", settings)
-    save_params(save_path / "model", step_state.training_state.model_params)
+    # save_settings(save_path / "settings.json", settings)
+    # save_params(save_path / "model", step_state.training_state.model_params)
     save_metrics(save_path / "metrics.parquet", metrics_logger)
 
 

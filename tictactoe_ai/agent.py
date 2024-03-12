@@ -1,17 +1,17 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic
 
-from jaxtyping import Array, Int8, Key, Float32
+from jaxtyping import Array, Int8, Key, Float32, PRNGKeyArray
 
 from .gamerules.types import VectorizedGameState
 from .metrics import Metrics
 
 S = TypeVar('S')
 
-class Agent(ABC, Generic[S]):
 
+class Agent(ABC, Generic[S]):
     @abstractmethod
-    def initialize(self) -> S:
+    def initialize(self, rng_key: PRNGKeyArray) -> S:
         pass
 
     @abstractmethod

@@ -18,7 +18,7 @@ def get_random_move(state: GameState, rng_key: PRNGKeyArray):
 
 
 class RandomAgent(Agent[None]):
-    def initialize(self) -> None:
+    def initialize(self, rng_key) -> None:
         return
 
     def act(self, agent_state: None, game_states: VectorizedGameState, rng_keys: Key[Array, "vec"]) -> Int8[Array, "vec"]:
