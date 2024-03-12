@@ -49,7 +49,7 @@ def main():
             3, 3, 3,
             3, 3, 3,
         ),
-        EMPTY, # empty
+        EMPTY,
         dtype=np.int8
     )
     state_actions = np.zeros(

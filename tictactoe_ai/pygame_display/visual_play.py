@@ -71,7 +71,7 @@ def play(actor_critic: ActorCriticModel, params: ModelParams):
     running = True
 
     game_state = initialize_game()
-    board = game_state["board"].flatten().tolist()
+    board = game_state.board.flatten().tolist()
 
     rng_key = random.PRNGKey(0)
 
@@ -91,8 +91,8 @@ def play(actor_critic: ActorCriticModel, params: ModelParams):
                     jnp.int8(index), actor_critic, params, game_state, rng_key
                 )
 
-                board = game_state["board"].flatten().tolist()
-                print(game_state["over_result"])
+                board = game_state.board.flatten().tolist()
+                print(game_state.over_result)
 
         # fill the screen with a color to wipe away anything from last frame
         screen.fill("white")
@@ -180,11 +180,11 @@ def render_o(screen: pygame.Surface, pos: tuple[int, int]):
 
 
 def main():
-    path = Path("./run-selfplay")
-    settings = load_settings(path / "settings.json")
-    actor_critic = create_actor_critic(settings)
-    model = actor_critic.model
-    params = load_params(path / "model", model)
+    #path = Path("./run-selfplay")
+    #settings = load_settings(path / "settings.json")
+    #actor_critic = create_actor_critic(settings)
+    model = None # actor_critic.model
+    params = None #load_params(path / "model", model)
 
     play(model, params)
 

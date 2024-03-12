@@ -1,11 +1,12 @@
-from jax import numpy as jnp
+from jax import numpy as jnp, random
+from jaxtyping import PRNGKeyArray
 from .types import GameState, VectorizedGameState
 
 
-def initialize_game() -> GameState:
+def initialize_game(key: PRNGKeyArray) -> GameState:
     return GameState(
         board=jnp.zeros((3, 3), dtype=jnp.int8),
-        active_player=jnp.int8(1),
+        active_player=random.choice(key, jnp.array([-1, 1], dtype=jnp.int8)),
         over_result=jnp.int8(0),
     )
 
