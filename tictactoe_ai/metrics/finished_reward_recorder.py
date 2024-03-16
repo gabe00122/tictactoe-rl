@@ -1,5 +1,6 @@
 from typing import NamedTuple
 from jax import numpy as jnp, Array
+from jaxtyping import Bool, Float32
 
 # This file is for recording the cumulative rewards for an episode
 
@@ -16,7 +17,9 @@ def init(vec_num: int) -> FinishedRewardRecorderState:
 
 
 def update(
-    state: FinishedRewardRecorderState, done: Array, step_rewards: Array
+    state: FinishedRewardRecorderState,
+    done: Bool[Array, "vec"],
+    step_rewards: Float32[Array, "vec"],
 ) -> tuple[FinishedRewardRecorderState, Array]:
     ongoing_episode_rewards = state.ongoing_episode_rewards + step_rewards
 

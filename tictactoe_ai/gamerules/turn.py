@@ -27,4 +27,3 @@ def reset_if_done(state: GameState, rng_key: PRNGKeyArray) -> GameState:
         lambda: initialize_game(rng_key),
         lambda: state,
     )
-

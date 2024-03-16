@@ -1,5 +1,6 @@
 from typing import NamedTuple
 from jax import numpy as jnp, Array
+from jaxtyping import Array, Bool, Scalar, Int32, Float32
 from . import finished_reward_recorder
 from .finished_reward_recorder import (
     FinishedRewardRecorderState,
@@ -8,18 +9,15 @@ from .types import Metrics
 
 
 class MetricsRecorderState(NamedTuple):
-    step: Array
-    mean_rewards: Array
     finished_reward_recorder_state: FinishedRewardRecorderState
-    state_value: Array
-    td_error: Array
-    actor_loss: Array
-    critic_loss: Array
-    entropy: Array
-
-    winsX: Array
-    winsO: Array
-    ties: Array
+    step: Int32[Scalar, ""]
+    mean_rewards: Float32[Array, "capacity"]
+    state_value: Float32[Array, "capacity"]
+    td_error: Float32[Array, "capacity"]
+    actor_loss: Float32[Array, "capacity"]
+    critic_loss: Float32[Array, "capacity"]
+    entropy: Float32[Array, "capacity"]
+    game_outcomes: Int32[Array, "capacity 3"]  # agent a wins, tie, agent b wins
 
 
 def init(capacity: int, vec_num: int) -> MetricsRecorderState:
@@ -32,17 +30,16 @@ def init(capacity: int, vec_num: int) -> MetricsRecorderState:
         actor_loss=jnp.zeros(capacity, dtype=jnp.float32),
         critic_loss=jnp.zeros(capacity, dtype=jnp.float32),
         entropy=jnp.zeros(capacity, dtype=jnp.float32),
-        winsX=jnp.int32(0),
-        winsO=jnp.int32(0),
-        ties=jnp.int32(0),
+        game_outcomes=jnp.zeros((capacity, 3), dtype=jnp.int32),
     )
 
 
 def update(
     state: MetricsRecorderState,
-    done: Array,
-    step_rewards: Array,
+    done: Bool[Array, "vec"],
+    step_rewards: Float32[Array, "vec"],
     metrics: Metrics,
+    game_outcomes: Int32[Array, "3"],
 ) -> MetricsRecorderState:
     step = state.step
     finished_reward_recorder_state = state.finished_reward_recorder_state
@@ -70,5 +67,4 @@ def update(
 def reset(state: MetricsRecorderState) -> MetricsRecorderState:
     return state._replace(
         step=jnp.int32(0),
-        ties=jnp.int32(0),
     )

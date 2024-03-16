@@ -35,6 +35,7 @@ def load_params(path: Path, actor_critic: ActorCriticModel) -> ModelParams:
 
 
 from tictactoe_ai.minmax.minmax_player import get_action
+
 optimal_play = jnp.load("./optimal_play.npy")
 
 
@@ -46,7 +47,11 @@ def play_round(
     game: GameState,
     rng_key: PRNGKeyArray,
 ) -> tuple[GameState, PRNGKeyArray]:
-    game = reset_if_done(game)
+    rng_key, reset_key = jax.random.split(rng_key)
+    game = reset_if_done(
+        game,
+        reset_key,
+    )
     game = turn(game, player_action)
 
     rng_key, action_key = jax.random.split(rng_key)
@@ -70,7 +75,12 @@ def play(actor_critic: ActorCriticModel, params: ModelParams):
     clock = pygame.time.Clock()
     running = True
 
-    game_state = initialize_game()
+    game_state = GameState(
+        board=jnp.zeros((3, 3), dtype=jnp.int8),
+        active_player=jnp.int8(1),
+        over_result=jnp.int8(0),
+    )
+
     board = game_state.board.flatten().tolist()
 
     rng_key = random.PRNGKey(0)
@@ -180,11 +190,11 @@ def render_o(screen: pygame.Surface, pos: tuple[int, int]):
 
 
 def main():
-    #path = Path("./run-selfplay")
-    #settings = load_settings(path / "settings.json")
-    #actor_critic = create_actor_critic(settings)
-    model = None # actor_critic.model
-    params = None #load_params(path / "model", model)
+    # path = Path("./run-selfplay")
+    # settings = load_settings(path / "settings.json")
+    # actor_critic = create_actor_critic(settings)
+    model = None  # actor_critic.model
+    params = None  # load_params(path / "model", model)
 
     play(model, params)
 

@@ -14,6 +14,7 @@ EMPTY = -2
 O_PLAYER = -1
 X_PLAYER = 1
 
+
 def minmax(states, state_actions, state: GameState):
     board = state.board.flatten().tolist()
     index = [x + 1 for x in board]
@@ -29,13 +30,17 @@ def minmax(states, state_actions, state: GameState):
 
         for action, cell in enumerate(board):
             if cell == 0:
-                child_value = minmax(states, state_actions, turn(state, jnp.int8(action)))
+                child_value = minmax(
+                    states, state_actions, turn(state, jnp.int8(action))
+                )
                 state_actions[*index, action] = child_value
 
                 if first:
                     value = child_value
                     first = False
-                elif (state.active_player == O_PLAYER and child_value < value) or (state.active_player == X_PLAYER and child_value > value):
+                elif (state.active_player == O_PLAYER and child_value < value) or (
+                    state.active_player == X_PLAYER and child_value > value
+                ):
                     value = child_value
 
     states[*index] = value
@@ -45,24 +50,44 @@ def minmax(states, state_actions, state: GameState):
 def main():
     states = np.full(
         (
-            3, 3, 3,
-            3, 3, 3,
-            3, 3, 3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
         ),
         EMPTY,
-        dtype=np.int8
+        dtype=np.int8,
     )
     state_actions = np.zeros(
         (
-            3, 3, 3,
-            3, 3, 3,
-            3, 3, 3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
             9,
         ),
         dtype=np.int8,
     )
 
-    minmax(states, state_actions, initialize_game())
+    minmax(
+        states,
+        state_actions,
+        GameState(
+            board=jnp.zeros((3, 3), dtype=jnp.int8),
+            active_player=jnp.int8(1),
+            over_result=jnp.int8(0),
+        ),
+    )
     np.save("./optimal_play.npy", state_actions)
 
 

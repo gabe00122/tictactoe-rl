@@ -17,6 +17,7 @@ from tictactoe_ai.metrics.metrics_logger_np import MetricsLoggerNP
 from tictactoe_ai.model.run_settings import save_settings
 from tictactoe_ai.util import split_n
 from tictactoe_ai.random_agent import RandomAgent
+from tictactoe_ai.minmax.minmax_player import MinmaxAgent
 
 
 class StaticState(NamedTuple):
@@ -31,7 +32,6 @@ class StepState(NamedTuple):
     state_b: Any
     env_state: VectorizedGameState
     metrics_state: MetricsRecorderState
-    game_outcomes: Any
 
 
 def train_step(static_state: StaticState, step_state: StepState) -> StepState:
@@ -44,12 +44,11 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     state_b = step_state.state_b
     env_state = step_state.env_state
     metrics_state = step_state.metrics_state
-    game_outcomes = step_state.game_outcomes
 
     def get_actions(a, b, state, a_keys):
         actions_a = agent_a.act(a, state, a_keys)
         actions_b = agent_b.act(b, state, a_keys)
-        return jnp.where(state.active_player, actions_a, actions_b)
+        return jnp.where(state.active_player == 1, actions_a, actions_b)
 
     # reset finished games
     rng_key, initialize_keys = split_n(rng_key, env_num)
@@ -62,7 +61,16 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     # play the action
     env_state = jax.vmap(turn, (0, 0))(env_state, actions)
 
-    game_outcomes += jax.nn.one_hot(env_state.over_result - 1, 3, dtype=jnp.int32).sum(0)
+    game_outcomes = jax.nn.one_hot(env_state.over_result, 4, dtype=jnp.int32)[
+        :, 1:
+    ].sum(0)
+
+    metrics_state = metrics_state._replace(
+        step=metrics_state.step + 1,
+        game_outcomes=metrics_state.game_outcomes.at[metrics_state.step].set(
+            game_outcomes
+        ),
+    )
 
     return StepState(
         rng_key=rng_key,
@@ -70,7 +78,6 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
         state_b=state_b,
         env_state=env_state,
         metrics_state=metrics_state,
-        game_outcomes=game_outcomes,
     )
 
 
@@ -93,8 +100,14 @@ def train_n_steps(
         step_state = jit_train_n_steps(static_state, jit_iterations, step_state)
 
         step = step_state.metrics_state.step
-        rewards = step_state.metrics_state.mean_rewards[step - jit_iterations : step]
-        print(f"step: {i * jit_iterations}, reward: {rewards.mean().item()}")
+        # rewards = step_state.metrics_state.mean_rewards[step - jit_iterations : step]
+        game_outcomes = step_state.metrics_state.game_outcomes[
+            step - jit_iterations : step
+        ]
+        agent_b, ties, agent_a = game_outcomes.sum(0).tolist()
+        print(
+            f"step: {i * jit_iterations}, agent a: {agent_a}, ties: {ties}, agent b: {agent_b}"
+        )
     return step_state
 
 
@@ -107,8 +120,8 @@ def main():
 
     static_state = StaticState(
         env_num=env_num,
-        agent_a=RandomAgent(),
-        agent_b=RandomAgent(),
+        agent_a=MinmaxAgent(),
+        agent_b=MinmaxAgent(),
     )
 
     rng_key, game_keys = split_n(rng_key, env_num)
@@ -117,17 +130,16 @@ def main():
     rng_key, agent_a_key, agent_b_key = random.split(rng_key, 3)
     step_state = StepState(
         rng_key=rng_key,
-        state_a=static_state.agent_a.initialize(agent_a_key),
-        state_b=static_state.agent_b.initialize(agent_b_key),
+        state_a=static_state.agent_a.load(
+            Path("./optimal_play.npy")
+        ),  # .initialize(agent_a_key),
+        state_b=static_state.agent_b.load(Path("./optimal_play.npy")),
         env_state=game_state,
-        metrics_state=metrics_recorder.init(total_steps * 2, env_num),
-        game_outcomes=jnp.zeros(3, dtype=jnp.int32)
+        metrics_state=metrics_recorder.init(total_steps, env_num),
     )
     step_state = train_n_steps(static_state, total_steps, jit_iterations, step_state)
 
-    print(step_state.game_outcomes)
-
-    metrics_logger = MetricsLoggerNP(total_steps * 2)
+    metrics_logger = MetricsLoggerNP(total_steps)
     metrics_logger.log(step_state.metrics_state)
 
     save_path = Path("./run-selfplay")
