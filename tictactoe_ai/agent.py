@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic
-
+from pathlib import Path
 from jaxtyping import Array, Int8, Key, Float32, PRNGKeyArray
 
 from .gamerules.types import VectorizedGameState
@@ -19,7 +19,6 @@ class Agent(ABC, Generic[S]):
         # returns an action
         pass
 
-
     @abstractmethod
     def learn(
         self,
@@ -29,4 +28,12 @@ class Agent(ABC, Generic[S]):
         rewards: Float32[Array, "vec"],
         next_obs: VectorizedGameState
     ) -> tuple[S, Metrics]:
+        pass
+
+    @abstractmethod
+    def load(self, path: Path) -> S:
+        pass
+
+    @abstractmethod
+    def save(self, path: Path, state: S):
         pass

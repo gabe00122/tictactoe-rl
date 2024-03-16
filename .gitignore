@@ -3,10 +3,11 @@ __pycache__
 .DS_Store
 .idea/
 .fleet/
+.vscode
+.ipynb_checkpoints
+pyrightconfig.json
 
 run/
 run-selfplay/
-
-.ipynb_checkpoints
 
 optimal_play.npy
