@@ -21,9 +21,9 @@ def turn(state: GameState, action: Int[ScalarLike, ""]) -> GameState:
     )
 
 
-def reset_if_done(state: GameState, rng_key: PRNGKeyArray) -> GameState:
+def reset_if_done(state: GameState) -> GameState:
     return jax.lax.cond(
         state.over_result != 0,
-        lambda: initialize_game(rng_key),
+        lambda: initialize_game(),
         lambda: state,
     )

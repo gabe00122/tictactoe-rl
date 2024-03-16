@@ -3,10 +3,10 @@ from typing import TypeVar, Generic
 from pathlib import Path
 from jaxtyping import Array, Int8, Key, Float32, PRNGKeyArray
 
-from .gamerules.types import VectorizedGameState
+from .gamerules.types import GameState
 from .metrics import Metrics
 
-S = TypeVar('S')
+S = TypeVar("S")
 
 
 class Agent(ABC, Generic[S]):
@@ -15,7 +15,9 @@ class Agent(ABC, Generic[S]):
         pass
 
     @abstractmethod
-    def act(self, agent_state: S, game_states: VectorizedGameState, rng_keys: Key[Array, "vec"]) -> Int8[Array, "vec"]:
+    def act(
+        self, agent_state: S, game_states: GameState, rng_keys: Key[Array, "vec"]
+    ) -> Int8[Array, "vec"]:
         # returns an action
         pass
 
@@ -23,10 +25,10 @@ class Agent(ABC, Generic[S]):
     def learn(
         self,
         params: S,
-        game_states: VectorizedGameState,
+        game_states: GameState,
         actions: Int8[Array, "vec"],
         rewards: Float32[Array, "vec"],
-        next_obs: VectorizedGameState
+        next_obs: GameState,
     ) -> tuple[S, Metrics]:
         pass
 

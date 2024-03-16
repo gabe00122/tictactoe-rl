@@ -75,11 +75,7 @@ def play(actor_critic: ActorCriticModel, params: ModelParams):
     clock = pygame.time.Clock()
     running = True
 
-    game_state = GameState(
-        board=jnp.zeros((3, 3), dtype=jnp.int8),
-        active_player=jnp.int8(1),
-        over_result=jnp.int8(0),
-    )
+    game_state = initialize_game()
 
     board = game_state.board.flatten().tolist()
 

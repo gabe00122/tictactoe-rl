@@ -82,11 +82,7 @@ def main():
     minmax(
         states,
         state_actions,
-        GameState(
-            board=jnp.zeros((3, 3), dtype=jnp.int8),
-            active_player=jnp.int8(1),
-            over_result=jnp.int8(0),
-        ),
+        initialize_game(),
     )
     np.save("./optimal_play.npy", state_actions)
 

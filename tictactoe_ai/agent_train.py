@@ -5,13 +5,13 @@ from typing import Any, NamedTuple
 
 import jax
 from jax import numpy as jnp, random
-from jaxtyping import PRNGKeyArray
+from jaxtyping import Array, PRNGKeyArray, Int8
 from orbax.checkpoint import PyTreeCheckpointer
 
 from tictactoe_ai.agent import Agent
 from tictactoe_ai.gamerules.initialize import initialize_n_games
 from tictactoe_ai.gamerules.turn import turn, reset_if_done
-from tictactoe_ai.gamerules.types import VectorizedGameState
+from tictactoe_ai.gamerules.types import GameState
 from tictactoe_ai.metrics import metrics_recorder, MetricsRecorderState
 from tictactoe_ai.metrics.metrics_logger_np import MetricsLoggerNP
 from tictactoe_ai.model.run_settings import save_settings
@@ -30,7 +30,8 @@ class StepState(NamedTuple):
     rng_key: PRNGKeyArray
     state_a: Any
     state_b: Any
-    env_state: VectorizedGameState
+    active_agent: Int8[Array, "envs"]
+    env_state: GameState
     metrics_state: MetricsRecorderState
 
 
@@ -42,17 +43,17 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     rng_key = step_state.rng_key
     state_a = step_state.state_a
     state_b = step_state.state_b
+    active_agent = step_state.active_agent
     env_state = step_state.env_state
     metrics_state = step_state.metrics_state
 
     def get_actions(a, b, state, a_keys):
         actions_a = agent_a.act(a, state, a_keys)
         actions_b = agent_b.act(b, state, a_keys)
-        return jnp.where(state.active_player == 1, actions_a, actions_b)
+        return jnp.where(active_agent == 1, actions_a, actions_b)
 
     # reset finished games
-    rng_key, initialize_keys = split_n(rng_key, env_num)
-    env_state = jax.vmap(reset_if_done)(env_state, initialize_keys)
+    env_state = jax.vmap(reset_if_done)(env_state)
 
     # pick an action
     rng_key, action_keys = split_n(rng_key, env_num)
@@ -72,11 +73,21 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
         ),
     )
 
+    # set the active agent to the other agent or randomize it if the game is over
+    active_agent = -active_agent
+    dones = env_state.over_result != 0
+    rng_key, active_agent_keys = random.split(rng_key)
+    random_active_agents = random.choice(
+        active_agent_keys, jnp.array([-1, 1], dtype=jnp.int8), (env_num,)
+    )
+    active_agent = jnp.where(dones, random_active_agents, active_agent)
+
     return StepState(
         rng_key=rng_key,
         state_a=state_a,
         state_b=state_b,
         env_state=env_state,
+        active_agent=active_agent,
         metrics_state=metrics_state,
     )
 
@@ -120,20 +131,22 @@ def main():
 
     static_state = StaticState(
         env_num=env_num,
-        agent_a=MinmaxAgent(),
+        agent_a=RandomAgent(),
         agent_b=MinmaxAgent(),
     )
 
-    rng_key, game_keys = split_n(rng_key, env_num)
-    game_state = initialize_n_games(game_keys)
+    game_state = initialize_n_games(env_num)
 
-    rng_key, agent_a_key, agent_b_key = random.split(rng_key, 3)
+    rng_key, agent_a_key, agent_b_key, active_agent_keys = random.split(rng_key, 4)
+    active_agents = random.choice(
+        active_agent_keys, jnp.array([-1, 1], dtype=jnp.int8), (env_num,)
+    )
+
     step_state = StepState(
         rng_key=rng_key,
-        state_a=static_state.agent_a.load(
-            Path("./optimal_play.npy")
-        ),  # .initialize(agent_a_key),
+        state_a=static_state.agent_a.initialize(agent_a_key),
         state_b=static_state.agent_b.load(Path("./optimal_play.npy")),
+        active_agent=active_agents,
         env_state=game_state,
         metrics_state=metrics_recorder.init(total_steps, env_num),
     )
