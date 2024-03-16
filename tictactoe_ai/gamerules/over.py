@@ -2,26 +2,23 @@ import jax
 from jax import numpy as jnp
 from jaxtyping import Scalar, Bool, Int8, Array
 
-# result key: ongoing, o won, tied, x won
+from tictactoe_ai.gamerules.types import GameState
+
+# result key: ongoing, draw, won
+ONGOING = jnp.int8(-1)
+DRAW = jnp.int8(0)
+WON = jnp.int8(1)
 
 
-def check_game_over(board: Int8[Array, "3 3"]) -> Int8[Scalar, ""]:
-    players = jnp.array([-1, 1], dtype=jnp.int8)
+def check_game_over(board, active_player) -> Int8[Scalar, ""]:
+    is_winner = check_player_won(board, active_player)
+    is_draw = check_no_space_left(board)
 
-    v_check_player_won = jax.vmap(check_player_won, in_axes=(None, 0))
-    winners = v_check_player_won(board, players)
-
-    is_winner = jnp.any(winners)
-
-    def some_winner():
-        winner = jnp.argmax(winners)
-        return jax.lax.cond(winner == 0, lambda: jnp.int8(1), lambda: jnp.int8(3))
-
-    def no_winner():
-        no_space_left = check_no_space_left(board)
-        return jax.lax.cond(no_space_left, lambda: jnp.int8(2), lambda: jnp.int8(0))
-
-    return jax.lax.cond(is_winner, some_winner, no_winner)
+    return jax.lax.cond(
+        is_winner,
+        lambda: WON,
+        lambda: jax.lax.cond(is_draw, lambda: DRAW, lambda: ONGOING),
+    )
 
 
 def check_player_won(

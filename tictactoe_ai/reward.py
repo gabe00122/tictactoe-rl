@@ -3,8 +3,10 @@ from jax import numpy as jnp
 from jaxtyping import Float, Bool, Scalar
 from functools import partial
 from .gamerules.types import GameState
+from .gamerules.over import ONGOING
 
 
+# TODO: this needs to be updated for the new rewards
 @partial(jax.vmap, in_axes=(0, None))
 def get_reward(state: GameState, player: int) -> Float[Scalar, ""]:
     result = state.over_result
@@ -19,4 +21,4 @@ def get_reward(state: GameState, player: int) -> Float[Scalar, ""]:
 
 @jax.vmap
 def get_done(state: GameState) -> Bool[Scalar, ""]:
-    return jnp.not_equal(state.over_result, 0)
+    return state.over_result != ONGOING

@@ -12,9 +12,11 @@ from tictactoe_ai.agent import Agent
 from tictactoe_ai.gamerules.initialize import initialize_n_games
 from tictactoe_ai.gamerules.turn import turn, reset_if_done
 from tictactoe_ai.gamerules.types import GameState
+from tictactoe_ai.gamerules.over import DRAW, ONGOING, WON
 from tictactoe_ai.metrics import metrics_recorder, MetricsRecorderState
 from tictactoe_ai.metrics.metrics_logger_np import MetricsLoggerNP
 from tictactoe_ai.model.run_settings import save_settings
+from tictactoe_ai.reward import get_done
 from tictactoe_ai.util import split_n
 from tictactoe_ai.random_agent import RandomAgent
 from tictactoe_ai.minmax.minmax_player import MinmaxAgent
@@ -62,9 +64,8 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     # play the action
     env_state = jax.vmap(turn, (0, 0))(env_state, actions)
 
-    game_outcomes = jax.nn.one_hot(env_state.over_result, 4, dtype=jnp.int32)[
-        :, 1:
-    ].sum(0)
+    # record the winn
+    game_outcomes = get_game_outcomes(active_agent, env_state.over_result).sum(0)
 
     metrics_state = metrics_state._replace(
         step=metrics_state.step + 1,
@@ -75,7 +76,7 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
 
     # set the active agent to the other agent or randomize it if the game is over
     active_agent = -active_agent
-    dones = env_state.over_result != 0
+    dones = get_done(env_state)
     rng_key, active_agent_keys = random.split(rng_key)
     random_active_agents = random.choice(
         active_agent_keys, jnp.array([-1, 1], dtype=jnp.int8), (env_num,)
@@ -89,6 +90,18 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
         env_state=env_state,
         active_agent=active_agent,
         metrics_state=metrics_state,
+    )
+
+
+@partial(jax.vmap, in_axes=(0, 0))
+def get_game_outcomes(active_agent, over_result):
+    return jnp.array(
+        [
+            jnp.logical_and(active_agent == -1, over_result == WON),
+            over_result == DRAW,
+            jnp.logical_and(active_agent == 1, over_result == WON),
+        ],
+        dtype=jnp.int32,
     )
 
 
