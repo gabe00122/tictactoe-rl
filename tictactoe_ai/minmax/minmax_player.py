@@ -39,10 +39,10 @@ class MinmaxAgent(Agent[MinmaxState]):
     def act(
         self,
         agent_state: MinmaxState,
-        game_states: GameState,
-        rng_keys: Key[Array, "vec"],
-    ) -> Int8[Array, "vec"]:
-        return jax.vmap(get_action, in_axes=(None, 0, 0))(agent_state.state_actions, game_states, rng_keys)  # type: ignore
+        game_state: GameState,
+        rng_key: Key[Array, ""],
+    ) -> Int8[Array, ""]:
+        return get_action(agent_state.state_actions, game_state, rng_key)
 
     def learn(
         self,

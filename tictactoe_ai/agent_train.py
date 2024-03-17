@@ -5,7 +5,7 @@ from typing import Any, NamedTuple
 
 import jax
 from jax import numpy as jnp, random
-from jaxtyping import Array, PRNGKeyArray, Int8
+from jaxtyping import Array, Scalar, PRNGKeyArray, Key, Int8, Int32, Bool
 from orbax.checkpoint import PyTreeCheckpointer
 
 from tictactoe_ai.agent import Agent
@@ -38,50 +38,20 @@ class StepState(NamedTuple):
 
 
 def train_step(static_state: StaticState, step_state: StepState) -> StepState:
-    env_num = static_state.env_num
-    agent_a = static_state.agent_a
-    agent_b = static_state.agent_b
+    env_num, agent_a, agent_b = static_state
+    rng_key, state_a, state_b, active_agent, env_state, metrics_state = step_state
 
-    rng_key = step_state.rng_key
-    state_a = step_state.state_a
-    state_b = step_state.state_b
-    active_agent = step_state.active_agent
-    env_state = step_state.env_state
-    metrics_state = step_state.metrics_state
 
-    def get_actions(a, b, state, a_keys):
-        actions_a = agent_a.act(a, state, a_keys)
-        actions_b = agent_b.act(b, state, a_keys)
-        return jnp.where(active_agent == 1, actions_a, actions_b)
-
-    # reset finished games
-    env_state = jax.vmap(reset_if_done)(env_state)
-
-    # pick an action
     rng_key, action_keys = split_n(rng_key, env_num)
-    actions = get_actions(state_a, state_b, env_state, action_keys)
+    env_state = advance_turn(env_state, active_agent, agent_a, state_a, agent_b, state_b, action_keys)
 
-    # play the action
-    env_state = jax.vmap(turn, (0, 0))(env_state, actions)
-
-    # record the winn
+    # record the win
     game_outcomes = get_game_outcomes(active_agent, env_state.over_result).sum(0)
+    metrics_state = record_outcome(metrics_state, game_outcomes)
 
-    metrics_state = metrics_state._replace(
-        step=metrics_state.step + 1,
-        game_outcomes=metrics_state.game_outcomes.at[metrics_state.step].set(
-            game_outcomes
-        ),
-    )
-
-    # set the active agent to the other agent or randomize it if the game is over
-    active_agent = -active_agent
     dones = get_done(env_state)
     rng_key, active_agent_keys = random.split(rng_key)
-    random_active_agents = random.choice(
-        active_agent_keys, jnp.array([-1, 1], dtype=jnp.int8), (env_num,)
-    )
-    active_agent = jnp.where(dones, random_active_agents, active_agent)
+    active_agent = update_active_agent(active_agent, dones, active_agent_keys)
 
     return StepState(
         rng_key=rng_key,
@@ -91,6 +61,27 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
         active_agent=active_agent,
         metrics_state=metrics_state,
     )
+
+@partial(jax.vmap, in_axes=(0, 0, None, None, None, None, 0))
+def advance_turn(
+        env_state: GameState,
+        active_agent: Int8[Scalar, ""],
+        agent_a: Agent,
+        state_a: Any,
+        agent_b: Agent,
+        state_b: Any,
+        rng_key: PRNGKeyArray
+) -> GameState:
+    env_state = reset_if_done(env_state)
+
+    action = jax.lax.cond(
+        active_agent == 1,
+        lambda: agent_a.act(state_a, env_state, rng_key),
+        lambda: agent_b.act(state_b, env_state, rng_key),
+    )
+
+    env_state = turn(env_state, action)
+    return env_state
 
 
 @partial(jax.vmap, in_axes=(0, 0))
@@ -103,6 +94,19 @@ def get_game_outcomes(active_agent, over_result):
         ],
         dtype=jnp.int32,
     )
+
+
+def record_outcome(metrics: MetricsRecorderState, game_outcomes: Int32[Array, "3"]) -> MetricsRecorderState:
+    return metrics._replace(
+        step=metrics.step + 1,
+        game_outcomes=metrics.game_outcomes.at[metrics.step].set(game_outcomes),
+    )
+
+
+def update_active_agent(active_agent: Int8[Array, "envs"], done: Bool[Array, "envs"], rng_key: Key[Scalar, ""]) -> Int8[Array, "envs"]:
+    shape = active_agent.shape
+    random_active_agents = random.choice(rng_key, jnp.array([-1, 1], dtype=jnp.int8), shape)
+    return jnp.where(done, random_active_agents, active_agent)
 
 
 @partial(jax.jit, static_argnums=(0, 1), donate_argnums=(2,))

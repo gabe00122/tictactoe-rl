@@ -1946,7 +1946,6 @@ files = [
     {file = "msgpack-1.0.8-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:5fbb160554e319f7b22ecf530a80a3ff496d38e8e07ae763b9e82fadfe96f273"},
     {file = "msgpack-1.0.8-cp39-cp39-win32.whl", hash = "sha256:f9af38a89b6a5c04b7d18c492c8ccf2aee7048aff1ce8437c4683bb5a1df893d"},
     {file = "msgpack-1.0.8-cp39-cp39-win_amd64.whl", hash = "sha256:ed59dd52075f8fc91da6053b12e8c89e37aa043f8986efd89e61fae69dc1b011"},
-    {file = "msgpack-1.0.8-py3-none-any.whl", hash = "sha256:24f727df1e20b9876fa6e95f840a2a2651e34c0ad147676356f4bf5fbb0206ca"},
     {file = "msgpack-1.0.8.tar.gz", hash = "sha256:95c02b0e27e706e48d0e5426d1710ca78e0f0628d6e89d5b5a5b91a5f12274f3"},
 ]
 
@@ -2658,30 +2657,6 @@ files = [
 [package.extras]
 plugins = ["importlib-metadata"]
 windows-terminal = ["colorama (>=0.4.6)"]
-
-[[package]]
-name = "pylance"
-version = "0.10.3"
-description = "python wrapper for Lance columnar format"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "pylance-0.10.3-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:ae1d26380ab17dea81c78b27c7ce3c9dd3f153a743fbeb88b8f00249ffad59f3"},
-    {file = "pylance-0.10.3-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:5bb7dc607acd1604da9b79662f9ba3423271232120bba4a84d0cf867909620cf"},
-    {file = "pylance-0.10.3-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:01efe7c66223a5efd7044b11ada9d5f808f57105dfc7576a057612ee209fe23b"},
-    {file = "pylance-0.10.3-cp38-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:3401512406d25c111272874fc5ea372c9bee74cb1d2740bdedab2262dd6ecd98"},
-    {file = "pylance-0.10.3-cp38-abi3-win_amd64.whl", hash = "sha256:241923d6569e40c6f53556e75d51393cf589751bebac065b03585184da3d63dc"},
-]
-
-[package.dependencies]
-numpy = ">=1.22"
-pyarrow = ">=12,<15.0.1"
-
-[package.extras]
-benchmarks = ["pytest-benchmark"]
-dev = ["ruff (==0.2.2)"]
-tests = ["datasets", "duckdb", "ml-dtypes", "pandas", "pillow", "polars[pandas,pyarrow]", "pytest", "tensorflow", "tqdm"]
-torch = ["torch"]
 
 [[package]]
 name = "pyparsing"
@@ -3569,4 +3544,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "bc7c53a6d6ef01dc72e2fda656a8f40be9a2d27cba56acc18fa176b22834fde8"
+content-hash = "ddbddccfc9f35dbc42e919adf3e4509f52190363291f19afa8b4a27cf1e13dba"

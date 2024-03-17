@@ -16,8 +16,8 @@ class Agent(ABC, Generic[S]):
 
     @abstractmethod
     def act(
-        self, agent_state: S, game_states: GameState, rng_keys: Key[Array, "vec"]
-    ) -> Int8[Array, "vec"]:
+        self, agent_state: S, game_state: GameState, rng_key: Key[Array, ""]
+    ) -> Int8[Array, ""]:
         # returns an action
         pass
 

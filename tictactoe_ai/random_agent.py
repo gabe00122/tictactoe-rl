@@ -23,9 +23,9 @@ class RandomAgent(Agent[None]):
         return
 
     def act(
-        self, agent_state: None, game_states: GameState, rng_keys: Key[Array, "vec"]
-    ) -> Int8[Array, "vec"]:
-        return jax.vmap(get_random_move, (0, 0))(game_states, rng_keys)  # type: ignore
+        self, agent_state: None, game_state: GameState, rng_key: Key[Array, ""]
+    ) -> Int8[Array, ""]:
+        return get_random_move(game_state, rng_key)
 
     def learn(
         self,
