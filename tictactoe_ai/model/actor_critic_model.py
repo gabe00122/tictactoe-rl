@@ -1,6 +1,4 @@
-from jax import numpy as jnp
 from flax import linen as nn
-from .mlp import mish
 
 
 class ActorCriticModel(nn.Module):
@@ -12,13 +10,11 @@ class ActorCriticModel(nn.Module):
     def __call__(self, inputs, mask):
         x = inputs
         x = self.body(x)
-        x = mish(x)
 
-        actor_logits = self.actor_head(x)
+        actor_logits = self.actor_head(x, mask)
         critic_value = self.critic_head(x)
 
-        actor_logits = jnp.where(mask, actor_logits, -jnp.inf)
-        return actor_logits, jnp.squeeze(critic_value)
+        return actor_logits, critic_value
 
     def __hash__(self):
         return id(self)

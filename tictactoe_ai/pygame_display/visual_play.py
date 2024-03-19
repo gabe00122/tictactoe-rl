@@ -12,8 +12,6 @@ from tictactoe_ai.gamerules.turn import turn, reset_if_done
 from tictactoe_ai.gamerules.types import GameState
 from tictactoe_ai.model.actor_critic import ModelParams
 from tictactoe_ai.model.actor_critic_model import ActorCriticModel
-from tictactoe_ai.model.initalize import create_actor_critic
-from tictactoe_ai.model.run_settings import load_settings
 
 screen_size = 600
 cell_size = screen_size / 3

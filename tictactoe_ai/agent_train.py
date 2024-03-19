@@ -6,20 +6,18 @@ from typing import Any, NamedTuple
 import jax
 from jax import numpy as jnp, random
 from jaxtyping import Array, Scalar, PRNGKeyArray, Key, Int8, Int32, Bool
-from orbax.checkpoint import PyTreeCheckpointer
 
 from tictactoe_ai.agent import Agent
-from tictactoe_ai.gamerules.initialize import initialize_n_games
-from tictactoe_ai.gamerules.turn import turn, reset_if_done
-from tictactoe_ai.gamerules.types import GameState
-from tictactoe_ai.gamerules.over import DRAW, ONGOING, WON
+from tictactoe_ai.gamerules import initialize_n_games, turn, reset_if_done, GameState, DRAW, ONGOING, WON
 from tictactoe_ai.metrics import metrics_recorder, MetricsRecorderState
 from tictactoe_ai.metrics.metrics_logger_np import MetricsLoggerNP
-from tictactoe_ai.model.run_settings import save_settings
-from tictactoe_ai.reward import get_done
+from tictactoe_ai.model_agent import ActorCriticAgent
+from tictactoe_ai.model_agent.reward import get_done
 from tictactoe_ai.util import split_n
 from tictactoe_ai.random_agent import RandomAgent
 from tictactoe_ai.minmax.minmax_player import MinmaxAgent
+from tictactoe_ai.model.run_settings import load_settings
+from tictactoe_ai.model.initalize import create_actor_critic
 
 
 class StaticState(NamedTuple):
@@ -41,7 +39,6 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     env_num, agent_a, agent_b = static_state
     rng_key, state_a, state_b, active_agent, env_state, metrics_state = step_state
 
-
     rng_key, action_keys = split_n(rng_key, env_num)
     env_state = advance_turn(env_state, active_agent, agent_a, state_a, agent_b, state_b, action_keys)
 
@@ -61,6 +58,7 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
         active_agent=active_agent,
         metrics_state=metrics_state,
     )
+
 
 @partial(jax.vmap, in_axes=(0, 0, None, None, None, None, 0))
 def advance_turn(
@@ -146,10 +144,13 @@ def main():
     jit_iterations = 1_000
     env_num = 128
 
+    agent_settings = load_settings("./run/settings.json")
+    actor_critic = create_actor_critic(agent_settings)
+
     static_state = StaticState(
         env_num=env_num,
         agent_a=RandomAgent(),
-        agent_b=MinmaxAgent(),
+        agent_b=ActorCriticAgent(actor_critic),
     )
 
     game_state = initialize_n_games(env_num)
@@ -162,7 +163,7 @@ def main():
     step_state = StepState(
         rng_key=rng_key,
         state_a=static_state.agent_a.initialize(agent_a_key),
-        state_b=static_state.agent_b.load(Path("./optimal_play.npy")),
+        state_b=static_state.agent_b.initialize(agent_b_key),
         active_agent=active_agents,
         env_state=game_state,
         metrics_state=metrics_recorder.init(total_steps, env_num),
@@ -183,11 +184,6 @@ def create_directory(path: Path):
     if path.exists():
         shutil.rmtree(path)
     path.mkdir(parents=True, exist_ok=True)
-
-
-def save_params(path: Path, params: Any):
-    checkpointer = PyTreeCheckpointer()
-    checkpointer.save(path.absolute(), params)
 
 
 def save_metrics(path: Path, metrics: MetricsLoggerNP):

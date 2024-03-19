@@ -2,8 +2,6 @@ import jax
 from jax import numpy as jnp
 from jaxtyping import Scalar, Bool, Int8, Array
 
-from tictactoe_ai.gamerules.types import GameState
-
 # result key: ongoing, draw, won
 ONGOING = jnp.int8(-1)
 DRAW = jnp.int8(0)

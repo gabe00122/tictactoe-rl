@@ -2,8 +2,8 @@ import jax
 from jax import numpy as jnp
 from jaxtyping import Float, Bool, Scalar
 from functools import partial
-from .gamerules.types import GameState
-from .gamerules.over import ONGOING
+from ..gamerules.types import GameState
+from ..gamerules.over import ONGOING
 
 
 # TODO: this needs to be updated for the new rewards
