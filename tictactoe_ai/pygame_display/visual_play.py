@@ -1,83 +1,91 @@
 from functools import partial
-from pathlib import Path
+from typing import Any
 
 import jax.random
-import orbax.checkpoint as ocp
 import pygame
 from jax import numpy as jnp, random
 from jaxtyping import PRNGKeyArray
+from pathlib import Path
 
+from tictactoe_ai.agent import Agent
+from tictactoe_ai.gamerules import ONGOING
 from tictactoe_ai.gamerules.initialize import initialize_game
-from tictactoe_ai.gamerules.turn import turn, reset_if_done
+from tictactoe_ai.gamerules.turn import turn
 from tictactoe_ai.gamerules.types import GameState
-from tictactoe_ai.model.actor_critic import ModelParams
-from tictactoe_ai.model.actor_critic_model import ActorCriticModel
+from tictactoe_ai.minmax.minmax_player import MinmaxAgent
+from tictactoe_ai.model_agent.observation import get_available_actions
 
 screen_size = 600
 cell_size = screen_size / 3
 margin = 20
 
-
-def load_params(path: Path, actor_critic: ActorCriticModel) -> ModelParams:
-    observation_dummy = jnp.zeros((9 * 3), jnp.float32)
-    mask_dummy = jnp.full((9,), True)
-    random_params: ModelParams = actor_critic.init(
-        random.PRNGKey(0), observation_dummy, mask_dummy
-    )
-
-    checkpointer = ocp.PyTreeCheckpointer()
-    restore_args = ocp.checkpoint_utils.construct_restore_args(random_params)
-    return checkpointer.restore(
-        path.absolute(), item=random_params, restore_args=restore_args
-    )
+player_turn = jax.jit(turn)
 
 
-from tictactoe_ai.minmax.minmax_player import get_action
-
-optimal_play = jnp.load("./optimal_play.npy")
-
-
-@partial(jax.jit, static_argnums=(1,))
-def play_round(
-    player_action,
-    actor_critic: ActorCriticModel,
-    params: ModelParams,
+@partial(jax.jit, static_argnums=(0,))
+def opponent_turn(
+    agent: Agent,
+    agent_state: Any,
     game: GameState,
     rng_key: PRNGKeyArray,
 ) -> tuple[GameState, PRNGKeyArray]:
-    rng_key, reset_key = jax.random.split(rng_key)
-    game = reset_if_done(
-        game,
-        reset_key,
-    )
-    game = turn(game, player_action)
-
     rng_key, action_key = jax.random.split(rng_key)
+    action = agent.act(agent_state, game, action_key)
 
-    # obs = get_observation(game, -1)
-    # mask = get_available_actions(game)
-    # logits, value = actor_critic.apply(params, obs, mask)
-    # jax.debug.print("{}\n{}", logits, value)
+    game = turn(game, action)
 
-    # action = random.categorical(action_key, logits)
-    action = get_action(optimal_play, game, action_key)
+    return game, rng_key
 
-    # action = get_random_move(game, action_key)
+
+def agent_goes_first(agent: Agent, agent_state: Any, rng_key: PRNGKeyArray) -> tuple[GameState, PRNGKeyArray]:
+    game = initialize_game()
+    rng_key, action_key = random.split(rng_key)
+    action = agent.act(agent_state, game, action_key)
     game = turn(game, action)
     return game, rng_key
 
 
-def play(actor_critic: ActorCriticModel, params: ModelParams):
+def player_goes_first(rng_key: PRNGKeyArray) -> tuple[GameState, PRNGKeyArray]:
+    return initialize_game(), rng_key
+
+
+@partial(jax.jit, static_argnums=(0,))
+def start_game(agent: Agent, agent_state: Any, rng_key: PRNGKeyArray) -> tuple[GameState, PRNGKeyArray]:
+    rng_key, starting_player_key = random.split(rng_key)
+    player_first = random.choice(starting_player_key, jnp.array([False, True], dtype=jnp.bool))
+    return jax.lax.cond(
+        player_first,
+        lambda: player_goes_first(rng_key),
+        lambda: agent_goes_first(agent, agent_state, rng_key),
+    )
+
+
+def handle_click(click_x: int, click_y: int, game: GameState, agent: Agent, agent_state: Any, rng_key: PRNGKeyArray) -> tuple[GameState, PRNGKeyArray]:
+    if game.over_result != ONGOING:
+        game, rng_key = start_game(agent, agent_state, rng_key)
+    else:
+        index = jnp.int8(click_y * 3 + click_x)
+        mask = get_available_actions(game)
+
+        if mask[index]:
+            game = turn(game, index)
+
+            if game.over_result == ONGOING:
+                game, rng_key = opponent_turn(agent, agent_state, game, rng_key)
+
+    return game, rng_key
+
+
+def play(agent: Agent, agent_state: Any):
     pygame.init()
     screen = pygame.display.set_mode((screen_size, screen_size))
     clock = pygame.time.Clock()
     running = True
 
-    game_state = initialize_game()
-
-    board = game_state.board.flatten().tolist()
-
     rng_key = random.PRNGKey(0)
+
+    game_state, rng_key = start_game(agent, agent_state, rng_key)
+    board = game_state.board.flatten().tolist()
 
     while running:
         # poll for events
@@ -89,11 +97,7 @@ def play(actor_critic: ActorCriticModel, params: ModelParams):
                 x, y = event.pos
                 x //= cell_size
                 y //= cell_size
-                index = y * 3 + x
-                # game_state = turn(game_state, jnp.int8(index))
-                game_state, rng_key = play_round(
-                    jnp.int8(index), actor_critic, params, game_state, rng_key
-                )
+                game_state, rng_key = handle_click(x, y, game_state, agent, agent_state, rng_key)
 
                 board = game_state.board.flatten().tolist()
                 print(game_state.over_result)
@@ -184,11 +188,8 @@ def render_o(screen: pygame.Surface, pos: tuple[int, int]):
 
 
 def main():
-    # path = Path("./run-selfplay")
-    # settings = load_settings(path / "settings.json")
-    # actor_critic = create_actor_critic(settings)
-    model = None  # actor_critic.model
-    params = None  # load_params(path / "model", model)
+    model = MinmaxAgent()
+    params = model.load(Path("./optimal_play.npy"))
 
     play(model, params)
 

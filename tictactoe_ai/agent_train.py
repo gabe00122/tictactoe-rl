@@ -175,8 +175,6 @@ def main():
 
     save_path = Path("./run-selfplay")
     create_directory(save_path)
-    # save_settings(save_path / "settings.json", settings)
-    # save_params(save_path / "model", step_state.training_state.model_params)
     save_metrics(save_path / "metrics.parquet", metrics_logger)
 
 
