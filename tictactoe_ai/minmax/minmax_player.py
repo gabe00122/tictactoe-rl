@@ -1,7 +1,7 @@
 from pathlib import Path
 from jax import numpy as jnp, random
 from typing import NamedTuple
-from jaxtyping import Array, Int8, PRNGKeyArray, Key
+from jaxtyping import Array, Int8, Bool, PRNGKeyArray, Key
 
 from tictactoe_ai.gamerules.types import GameState
 from tictactoe_ai.agent import Agent
@@ -13,7 +13,7 @@ class MinmaxState(NamedTuple):
 
 
 class MinmaxAgent(Agent[MinmaxState]):
-    def initialize(self, rng_key: PRNGKeyArray) -> MinmaxState:
+    def initialize(self, rng_key: PRNGKeyArray, env_num: int) -> MinmaxState:
         return MinmaxState(jnp.zeros((3, 3, 3, 3, 3, 3, 3, 3, 3, 9), dtype=jnp.int8))
 
     def act(
@@ -39,9 +39,9 @@ class MinmaxAgent(Agent[MinmaxState]):
         self,
         params: MinmaxState,
         game_states: GameState,
-        actions: Array,
-        rewards: Array,
+        actions: Int8[Array, "vec"],
         next_obs: GameState,
+        active_agents: Int8[Array, "vec"],
     ) -> tuple[MinmaxState, Metrics]:
         return params, empty_metrics()
 

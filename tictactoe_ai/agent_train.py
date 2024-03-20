@@ -48,13 +48,19 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     rng_key, state_a, state_b, active_agent, env_state, metrics_state = step_state
 
     rng_key, action_keys = split_n(rng_key, env_num)
-    env_state = advance_turn(
+
+    # first_env_state: is a temporary solution
+    env_state, action, first_env_state = advance_turn(
         env_state, active_agent, agent_a, state_a, agent_b, state_b, action_keys
     )
+
+    state_a, _ = static_state.agent_a.learn(state_a, first_env_state, action, env_state, active_agent == 1)
+    state_b, metrics = static_state.agent_b.learn(state_b, first_env_state, action, env_state, active_agent == -1)
 
     # record the win
     game_outcomes = get_game_outcomes(active_agent, env_state.over_result).sum(0)
     metrics_state = record_outcome(metrics_state, game_outcomes)
+    metrics_state = metrics_recorder.update(metrics_state, metrics)
 
     dones = get_done(env_state)
     rng_key, active_agent_keys = random.split(rng_key)
@@ -79,8 +85,9 @@ def advance_turn(
     agent_b: Agent,
     state_b: Any,
     rng_key: PRNGKeyArray,
-) -> GameState:
+) -> tuple[GameState, Any, GameState]:
     env_state = reset_if_done(env_state)
+    first_env = env_state
 
     action = jax.lax.cond(
         active_agent == 1,
@@ -89,7 +96,7 @@ def advance_turn(
     )
 
     env_state = turn(env_state, action)
-    return env_state
+    return env_state, action, first_env
 
 
 @partial(jax.vmap, in_axes=(0, 0))
@@ -108,7 +115,7 @@ def record_outcome(
     metrics: MetricsRecorderState, game_outcomes: Int32[Array, "3"]
 ) -> MetricsRecorderState:
     return metrics._replace(
-        step=metrics.step + 1,
+        # step=metrics.step + 1,
         game_outcomes=metrics.game_outcomes.at[metrics.step].set(game_outcomes),
     )
 
@@ -122,7 +129,7 @@ def update_active_agent(
     random_active_agents = random.choice(
         rng_key, jnp.array([-1, 1], dtype=jnp.int8), shape
     )
-    return jnp.where(done, random_active_agents, active_agent)
+    return jnp.where(done, random_active_agents, -active_agent)
 
 
 @partial(jax.jit, static_argnums=(0, 1), donate_argnums=(2,))
@@ -158,9 +165,9 @@ def train_n_steps(
 def main():
     rng_key = random.PRNGKey(123)
 
-    total_steps = 5000
+    total_steps = 100000
     jit_iterations = 1_000
-    env_num = 128
+    env_num = 128 * 2
 
     agent_settings = load_settings("./run/settings.json")
     actor_critic = create_actor_critic(agent_settings)
@@ -180,8 +187,8 @@ def main():
 
     step_state = StepState(
         rng_key=rng_key,
-        state_a=static_state.agent_a.initialize(agent_a_key),
-        state_b=static_state.agent_b.initialize(agent_b_key),
+        state_a=static_state.agent_a.initialize(agent_a_key, env_num),
+        state_b=static_state.agent_b.initialize(agent_b_key, env_num),
         active_agent=active_agents,
         env_state=game_state,
         metrics_state=metrics_recorder.init(total_steps, env_num),
@@ -194,6 +201,7 @@ def main():
     save_path = Path("./run-selfplay")
     create_directory(save_path)
     save_metrics(save_path / "metrics.parquet", metrics_logger)
+    static_state.agent_b.save(save_path / "checkpoint", step_state.state_b)
 
 
 def create_directory(path: Path):

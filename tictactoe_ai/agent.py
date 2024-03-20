@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic
 from pathlib import Path
-from jaxtyping import Array, Int8, Key, Float32, PRNGKeyArray
+from jaxtyping import Array, Int8, Key, Float32, PRNGKeyArray, Bool
 
 from .gamerules.types import GameState
 from .metrics import Metrics
@@ -11,7 +11,7 @@ S = TypeVar("S")
 
 class Agent(ABC, Generic[S]):
     @abstractmethod
-    def initialize(self, rng_key: PRNGKeyArray) -> S:
+    def initialize(self, rng_key: PRNGKeyArray, env_num: int) -> S:
         pass
 
     @abstractmethod
@@ -27,8 +27,8 @@ class Agent(ABC, Generic[S]):
         params: S,
         game_states: GameState,
         actions: Int8[Array, "vec"],
-        rewards: Float32[Array, "vec"],
         next_obs: GameState,
+        active_agents: Int8[Array, "vec"],
     ) -> tuple[S, Metrics]:
         pass
 

@@ -14,6 +14,9 @@ from tictactoe_ai.gamerules.turn import turn
 from tictactoe_ai.gamerules.types import GameState
 from tictactoe_ai.minmax.minmax_player import MinmaxAgent
 from tictactoe_ai.model_agent.observation import get_available_actions
+from tictactoe_ai.model.run_settings import load_settings
+from tictactoe_ai.model.initalize import create_actor_critic
+from tictactoe_ai.model_agent import ActorCriticAgent
 
 screen_size = 600
 cell_size = screen_size / 3
@@ -209,8 +212,13 @@ def render_o(screen: pygame.Surface, pos: tuple[int, int]):
 
 
 def main():
-    model = MinmaxAgent()
-    params = model.load(Path("./optimal_play.npy"))
+    # model = MinmaxAgent()
+    # params = model.load(Path("./optimal_play.npy"))
+
+    settings = load_settings(Path("./run/settings.json"))
+
+    model = ActorCriticAgent(create_actor_critic(settings))
+    params = model.load(Path("./run-selfplay/checkpoint"))
 
     play(model, params)
 

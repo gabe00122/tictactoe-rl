@@ -61,7 +61,7 @@ class ActorCritic(PyTreeNode):
         next_obs: Float32[Array, "vec 9 3"],
         done: Bool[Array, "vec"],
         importance: Float32[Array, "vec"],
-        took_turn: bool,
+        took_turn: Bool[Array, "vec"],
     ) -> tuple[Float32[Scalar, ""], Metrics]:
         v_model = jax.vmap(self.model.apply, (None, 0, 0), (0, 0))
         v_entropy_loss = jax.vmap(entropy_loss)
@@ -87,17 +87,19 @@ class ActorCritic(PyTreeNode):
         action_probs = v_log_softmax(action_logits)
         selected_action_prob = action_probs[jnp.arange(action_probs.shape[0]), actions]
 
-        # actor_loss_items = jnp.where(
-        #     took_turn, actor_loss_items, jnp.zeros_like(actor_loss_items)
-        # )
-        actor_loss = -jnp.mean(selected_action_prob * td_error * importance)
+        # masks of -inf can make the loss inf if they aren't filtered out
+        # took_turn = jnp.logical_and(took_turn, jnp.isfinite(selected_action_prob))
+        actor_loss = jax.lax.cond(
+            took_turn.any(),
+            lambda: -jnp.mean(selected_action_prob * td_error * importance, where=took_turn),
+            lambda: jnp.float32(0),
+        )
 
         entropy = jnp.mean(v_entropy_loss(action_probs))
 
-        if took_turn:
-            loss = self.actor_coef * actor_loss + critic_loss
-        else:
-            loss = critic_loss
+        loss = self.actor_coef * actor_loss + critic_loss
+
+        # jax.debug.breakpoint()
 
         metrics: Metrics = {
             "actor_loss": actor_loss,
@@ -119,7 +121,7 @@ class ActorCritic(PyTreeNode):
         next_obs: Float32[Array, "vec 9 3"],
         done: Bool[Array, "vec"],
         importance: Float32[Array, "vec"],
-        took_turn: bool,
+        took_turn: Bool[Array, "vec"],
     ):
         loss_fn = jax.value_and_grad(self.loss, has_aux=True)
         (loss, metrics), grad = loss_fn(
@@ -152,7 +154,7 @@ class ActorCritic(PyTreeNode):
         next_obs: Float32[Array, "vec 9 3"],
         done: Bool[Array, "vec"],
         importance: Float32[Array, "vec"],
-        took_turn: bool,
+        took_turn: Bool[Array, "vec"],
     ):
         params, metrics = self.update_model(
             params,

@@ -13,7 +13,7 @@ def get_observation(state: GameState, player: Int8[Scalar, ""]) -> Float[Array, 
     return jax.nn.one_hot(board, num_classes).flatten()
 
 
-get_observation_vec = jax.vmap(get_observation, (0, None))
+get_observation_vec = jax.vmap(get_observation, (0, 0))
 
 
 def get_available_actions(state: GameState) -> Bool[Array, "9"]:

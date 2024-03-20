@@ -36,26 +36,25 @@ def init(capacity: int, vec_num: int) -> MetricsRecorderState:
 
 def update(
     state: MetricsRecorderState,
-    done: Bool[Array, "vec"],
-    step_rewards: Float32[Array, "vec"],
+    # done: Bool[Array, "vec"],
+    # step_rewards: Float32[Array, "vec"],
     metrics: Metrics,
-    game_outcomes: Int32[Array, "3"],
 ) -> MetricsRecorderState:
     step = state.step
-    finished_reward_recorder_state = state.finished_reward_recorder_state
-    mean_rewards = state.mean_rewards
+    # finished_reward_recorder_state = state.finished_reward_recorder_state
+    # mean_rewards = state.mean_rewards
 
-    finished_reward_recorder_state, finished_rewards = finished_reward_recorder.update(
-        finished_reward_recorder_state, done, step_rewards
-    )
+    # finished_reward_recorder_state, finished_rewards = finished_reward_recorder.update(
+    #     finished_reward_recorder_state, done, step_rewards
+    # )
 
-    mean_rewards = mean_rewards.at[step].set(finished_rewards.mean())
+    # mean_rewards = mean_rewards.at[step].set(finished_rewards.mean())
     step = step + 1
 
     return state._replace(
         step=step,
-        finished_reward_recorder_state=finished_reward_recorder_state,
-        mean_rewards=mean_rewards,
+        # finished_reward_recorder_state=finished_reward_recorder_state,
+        # mean_rewards=mean_rewards,
         state_value=state.state_value.at[step].set(metrics["state_value"]),
         td_error=state.td_error.at[step].set(metrics["td_error"]),
         actor_loss=state.actor_loss.at[step].set(metrics["actor_loss"]),
