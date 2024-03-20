@@ -29,7 +29,9 @@ class ActorHead(nn.Module):
         actor_logits = nn.Dense(
             self.actions,
             name="Actor Head",
-            kernel_init=nn.initializers.variance_scaling(2.0, 'fan_in', 'truncated_normal')
+            kernel_init=nn.initializers.variance_scaling(
+                2.0, "fan_in", "truncated_normal"
+            ),
         )(inputs)
 
         actor_logits = jnp.where(mask, actor_logits, -jnp.inf)
@@ -39,5 +41,7 @@ class ActorHead(nn.Module):
 class CriticHead(nn.Module):
     @nn.compact
     def __call__(self, inputs):
-        value = nn.Dense(1, name="Critic Head", kernel_init=nn.initializers.he_normal())(inputs)
+        value = nn.Dense(
+            1, name="Critic Head", kernel_init=nn.initializers.he_normal()
+        )(inputs)
         return jnp.squeeze(value)

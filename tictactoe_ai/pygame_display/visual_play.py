@@ -37,7 +37,9 @@ def opponent_turn(
     return game, rng_key
 
 
-def agent_goes_first(agent: Agent, agent_state: Any, rng_key: PRNGKeyArray) -> tuple[GameState, PRNGKeyArray]:
+def agent_goes_first(
+    agent: Agent, agent_state: Any, rng_key: PRNGKeyArray
+) -> tuple[GameState, PRNGKeyArray]:
     game = initialize_game()
     rng_key, action_key = random.split(rng_key)
     action = agent.act(agent_state, game, action_key)
@@ -50,9 +52,13 @@ def player_goes_first(rng_key: PRNGKeyArray) -> tuple[GameState, PRNGKeyArray]:
 
 
 @partial(jax.jit, static_argnums=(0,))
-def start_game(agent: Agent, agent_state: Any, rng_key: PRNGKeyArray) -> tuple[GameState, PRNGKeyArray]:
+def start_game(
+    agent: Agent, agent_state: Any, rng_key: PRNGKeyArray
+) -> tuple[GameState, PRNGKeyArray]:
     rng_key, starting_player_key = random.split(rng_key)
-    player_first = random.choice(starting_player_key, jnp.array([False, True], dtype=jnp.bool))
+    player_first = random.choice(
+        starting_player_key, jnp.array([False, True], dtype=jnp.bool)
+    )
     return jax.lax.cond(
         player_first,
         lambda: player_goes_first(rng_key),
@@ -60,7 +66,14 @@ def start_game(agent: Agent, agent_state: Any, rng_key: PRNGKeyArray) -> tuple[G
     )
 
 
-def handle_click(click_x: int, click_y: int, game: GameState, agent: Agent, agent_state: Any, rng_key: PRNGKeyArray) -> tuple[GameState, PRNGKeyArray]:
+def handle_click(
+    click_x: int,
+    click_y: int,
+    game: GameState,
+    agent: Agent,
+    agent_state: Any,
+    rng_key: PRNGKeyArray,
+) -> tuple[GameState, PRNGKeyArray]:
     if game.over_result != ONGOING:
         game, rng_key = start_game(agent, agent_state, rng_key)
     else:
@@ -97,7 +110,9 @@ def play(agent: Agent, agent_state: Any):
                 x, y = event.pos
                 x //= cell_size
                 y //= cell_size
-                game_state, rng_key = handle_click(x, y, game_state, agent, agent_state, rng_key)
+                game_state, rng_key = handle_click(
+                    x, y, game_state, agent, agent_state, rng_key
+                )
 
                 board = game_state.board.flatten().tolist()
                 print(game_state.over_result)

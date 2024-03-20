@@ -8,7 +8,15 @@ from jax import numpy as jnp, random
 from jaxtyping import Array, Scalar, PRNGKeyArray, Key, Int8, Int32, Bool
 
 from tictactoe_ai.agent import Agent
-from tictactoe_ai.gamerules import initialize_n_games, turn, reset_if_done, GameState, DRAW, ONGOING, WON
+from tictactoe_ai.gamerules import (
+    initialize_n_games,
+    turn,
+    reset_if_done,
+    GameState,
+    DRAW,
+    ONGOING,
+    WON,
+)
 from tictactoe_ai.metrics import metrics_recorder, MetricsRecorderState
 from tictactoe_ai.metrics.metrics_logger_np import MetricsLoggerNP
 from tictactoe_ai.model_agent import ActorCriticAgent
@@ -40,7 +48,9 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     rng_key, state_a, state_b, active_agent, env_state, metrics_state = step_state
 
     rng_key, action_keys = split_n(rng_key, env_num)
-    env_state = advance_turn(env_state, active_agent, agent_a, state_a, agent_b, state_b, action_keys)
+    env_state = advance_turn(
+        env_state, active_agent, agent_a, state_a, agent_b, state_b, action_keys
+    )
 
     # record the win
     game_outcomes = get_game_outcomes(active_agent, env_state.over_result).sum(0)
@@ -62,13 +72,13 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
 
 @partial(jax.vmap, in_axes=(0, 0, None, None, None, None, 0))
 def advance_turn(
-        env_state: GameState,
-        active_agent: Int8[Scalar, ""],
-        agent_a: Agent,
-        state_a: Any,
-        agent_b: Agent,
-        state_b: Any,
-        rng_key: PRNGKeyArray
+    env_state: GameState,
+    active_agent: Int8[Scalar, ""],
+    agent_a: Agent,
+    state_a: Any,
+    agent_b: Agent,
+    state_b: Any,
+    rng_key: PRNGKeyArray,
 ) -> GameState:
     env_state = reset_if_done(env_state)
 
@@ -94,16 +104,24 @@ def get_game_outcomes(active_agent, over_result):
     )
 
 
-def record_outcome(metrics: MetricsRecorderState, game_outcomes: Int32[Array, "3"]) -> MetricsRecorderState:
+def record_outcome(
+    metrics: MetricsRecorderState, game_outcomes: Int32[Array, "3"]
+) -> MetricsRecorderState:
     return metrics._replace(
         step=metrics.step + 1,
         game_outcomes=metrics.game_outcomes.at[metrics.step].set(game_outcomes),
     )
 
 
-def update_active_agent(active_agent: Int8[Array, "envs"], done: Bool[Array, "envs"], rng_key: Key[Scalar, ""]) -> Int8[Array, "envs"]:
+def update_active_agent(
+    active_agent: Int8[Array, "envs"],
+    done: Bool[Array, "envs"],
+    rng_key: Key[Scalar, ""],
+) -> Int8[Array, "envs"]:
     shape = active_agent.shape
-    random_active_agents = random.choice(rng_key, jnp.array([-1, 1], dtype=jnp.int8), shape)
+    random_active_agents = random.choice(
+        rng_key, jnp.array([-1, 1], dtype=jnp.int8), shape
+    )
     return jnp.where(done, random_active_agents, active_agent)
 
 

@@ -1,5 +1,4 @@
 from pathlib import Path
-import jax
 
 from tictactoe_ai.gamerules.types import GameState
 from jaxtyping import PRNGKeyArray, Int8, Float32, Key
@@ -8,24 +7,20 @@ from tictactoe_ai.agent import Agent
 from tictactoe_ai.metrics import Metrics, empty_metrics
 
 
-def get_random_move(state: GameState, rng_key: PRNGKeyArray):
-    board = state.board
-    available_moves = board.flatten() == 0
-
-    count = jnp.count_nonzero(available_moves)
-    probs = available_moves / count
-
-    return random.choice(rng_key, jnp.arange(9), p=probs)
-
-
 class RandomAgent(Agent[None]):
     def initialize(self, rng_key: PRNGKeyArray) -> None:
         return
 
     def act(
-        self, agent_state: None, game_state: GameState, rng_key: Key[Array, ""]
+        self, agent_state: None, game: GameState, rng_key: Key[Array, ""]
     ) -> Int8[Array, ""]:
-        return get_random_move(game_state, rng_key)
+        board = game.board
+        available_moves = board.flatten() == 0
+
+        count = jnp.count_nonzero(available_moves)
+        probs = available_moves / count
+
+        return random.choice(rng_key, jnp.arange(9), p=probs)
 
     def learn(
         self,

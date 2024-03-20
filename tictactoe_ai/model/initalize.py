@@ -9,7 +9,7 @@ def create_actor_critic(settings: RunSettings) -> ActorCritic:
     actor_critic_model = ActorCriticModel(
         body=MlpBody(features=settings["root_hidden_layers"]),
         actor_head=ActorHead(actions=9),
-        critic_head=CriticHead()
+        critic_head=CriticHead(),
     )
 
     optimizer = optax.adamw(

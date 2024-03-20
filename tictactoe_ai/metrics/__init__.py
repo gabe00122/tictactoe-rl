@@ -9,5 +9,5 @@ __all__ = [
     "FinishedRewardRecorderState",
     "Metrics",
     "MetricsRecorderState",
-    "empty_metrics"
+    "empty_metrics",
 ]

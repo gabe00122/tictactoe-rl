@@ -4,6 +4,7 @@ from jaxtyping import Bool, Float32
 
 # This file is for recording the cumulative rewards for an episode
 
+
 class FinishedRewardRecorderState(NamedTuple):
     finished_episode_rewards: Array
     ongoing_episode_rewards: Array

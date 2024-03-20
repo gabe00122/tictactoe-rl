@@ -24,14 +24,27 @@ class ActorCriticAgent(Agent[ActorCriticState]):
         training_state = self.model.init(rng_key)
         return ActorCriticState(training_state)
 
-    def act(self, agent_state: ActorCriticState, game_state: GameState, rng_key: Key[Array, ""]) -> Int8[Array, ""]:
+    def act(
+        self,
+        agent_state: ActorCriticState,
+        game_state: GameState,
+        rng_key: Key[Array, ""],
+    ) -> Int8[Array, ""]:
         obs = get_observation(game_state, game_state.active_player)
         available_actions = get_available_actions(game_state)
-        action = self.model.act(agent_state.training_state, obs, available_actions, rng_key)
+        action = self.model.act(
+            agent_state.training_state, obs, available_actions, rng_key
+        )
         return action
 
-    def learn(self, agent_state: ActorCriticState, game_states: GameState, actions: Int8[Array, "vec"], rewards: Float32[Array, "vec"],
-              next_obs: GameState) -> tuple[ActorCriticState, Metrics]:
+    def learn(
+        self,
+        agent_state: ActorCriticState,
+        game: GameState,
+        actions: Int8[Array, "vec"],
+        rewards: Float32[Array, "vec"],
+        next_obs: GameState,
+    ) -> tuple[ActorCriticState, Metrics]:
         pass
 
     def load(self, path: Path) -> ActorCriticState:
