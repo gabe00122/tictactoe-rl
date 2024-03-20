@@ -22,7 +22,6 @@ margin = 20
 player_turn = jax.jit(turn)
 
 
-@partial(jax.jit, static_argnums=(0,))
 def opponent_turn(
     agent: Agent,
     agent_state: Any,
@@ -51,7 +50,6 @@ def player_goes_first(rng_key: PRNGKeyArray) -> tuple[GameState, PRNGKeyArray]:
     return initialize_game(), rng_key
 
 
-@partial(jax.jit, static_argnums=(0,))
 def start_game(
     agent: Agent, agent_state: Any, rng_key: PRNGKeyArray
 ) -> tuple[GameState, PRNGKeyArray]:
@@ -66,6 +64,7 @@ def start_game(
     )
 
 
+@partial(jax.jit, static_argnums=(3,))
 def handle_click(
     click_x: int,
     click_y: int,
@@ -74,19 +73,26 @@ def handle_click(
     agent_state: Any,
     rng_key: PRNGKeyArray,
 ) -> tuple[GameState, PRNGKeyArray]:
-    if game.over_result != ONGOING:
-        game, rng_key = start_game(agent, agent_state, rng_key)
-    else:
+    def on_ongoing():
         index = jnp.int8(click_y * 3 + click_x)
         mask = get_available_actions(game)
+        next_game = turn(game, index)
 
-        if mask[index]:
-            game = turn(game, index)
+        return jax.lax.cond(
+            mask[index],
+            lambda: jax.lax.cond(
+                next_game.over_result == ONGOING,
+                lambda: opponent_turn(agent, agent_state, next_game, rng_key),
+                lambda: (next_game, rng_key)
+            ),
+            lambda: (game, rng_key)
+        )
 
-            if game.over_result == ONGOING:
-                game, rng_key = opponent_turn(agent, agent_state, game, rng_key)
-
-    return game, rng_key
+    return jax.lax.cond(
+        game.over_result != ONGOING,
+        lambda: start_game(agent, agent_state, rng_key),
+        lambda: on_ongoing(),
+    )
 
 
 def play(agent: Agent, agent_state: Any):
