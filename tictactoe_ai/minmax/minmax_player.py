@@ -1,7 +1,8 @@
 from pathlib import Path
+import jax
 from jax import numpy as jnp, random
 from typing import NamedTuple
-from jaxtyping import Array, Int8, Bool, PRNGKeyArray, Key
+from jaxtyping import Array, Int8, PRNGKeyArray, Key
 
 from tictactoe_ai.gamerules.types import GameState
 from tictactoe_ai.agent import Agent
@@ -50,3 +51,6 @@ class MinmaxAgent(Agent[MinmaxState]):
 
     def load(self, path: Path) -> MinmaxState:
         return MinmaxState(jnp.load(path))
+
+    def get_name(self) -> str:
+        return "MinMax"

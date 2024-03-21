@@ -89,3 +89,6 @@ class ActorCriticAgent(Agent[ActorCriticState]):
     def save(self, path: Path, state: ActorCriticState):
         checkpointer = ocp.PyTreeCheckpointer()
         checkpointer.save(path.absolute(), state.training_state)
+
+    def get_name(self) -> str:
+        return "Actor Critic"

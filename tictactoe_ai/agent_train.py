@@ -48,17 +48,18 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     rng_key, state_a, state_b, active_agent, env_state, metrics_state = step_state
 
     rng_key, action_keys = split_n(rng_key, env_num)
+    active_player = env_state.active_player
 
     # first_env_state: is a temporary solution
     env_state, action, first_env_state = advance_turn(
-        env_state, active_agent, agent_a, state_a, agent_b, state_b, action_keys
+        env_state, active_agent, agent_a, state_b, agent_b, state_b, action_keys
     )
 
-    state_a, _ = static_state.agent_a.learn(state_a, first_env_state, action, env_state, active_agent == 1)
+    # state_a, _ = static_state.agent_a.learn(state_a, first_env_state, action, env_state, active_agent == 1)
     state_b, metrics = static_state.agent_b.learn(state_b, first_env_state, action, env_state, active_agent == -1)
 
     # record the win
-    game_outcomes = get_game_outcomes(active_agent, env_state.over_result).sum(0)
+    game_outcomes = get_game_outcomes(active_agent, active_player, env_state.over_result).sum(0)
     metrics_state = record_outcome(metrics_state, game_outcomes)
     metrics_state = metrics_recorder.update(metrics_state, metrics)
 
@@ -99,20 +100,22 @@ def advance_turn(
     return env_state, action, first_env
 
 
-@partial(jax.vmap, in_axes=(0, 0))
-def get_game_outcomes(active_agent, over_result):
+@partial(jax.vmap, in_axes=(0, 0, 0))
+def get_game_outcomes(active_agent, active_player, over_result):
     return jnp.array(
         [
-            jnp.logical_and(active_agent == -1, over_result == WON),
+            jnp.logical_and(jnp.logical_and(active_agent == -1, over_result == WON), active_player == 1),
+            jnp.logical_and(jnp.logical_and(active_agent == -1, over_result == WON), active_player == -1),
             over_result == DRAW,
-            jnp.logical_and(active_agent == 1, over_result == WON),
+            jnp.logical_and(jnp.logical_and(active_agent == 1, over_result == WON), active_player == 1),
+            jnp.logical_and(jnp.logical_and(active_agent == 1, over_result == WON), active_player == -1),
         ],
         dtype=jnp.int32,
     )
 
 
 def record_outcome(
-    metrics: MetricsRecorderState, game_outcomes: Int32[Array, "3"]
+    metrics: MetricsRecorderState, game_outcomes: Int32[Array, "5"]
 ) -> MetricsRecorderState:
     return metrics._replace(
         # step=metrics.step + 1,
@@ -153,12 +156,21 @@ def train_n_steps(
         step = step_state.metrics_state.step
         # rewards = step_state.metrics_state.mean_rewards[step - jit_iterations : step]
         game_outcomes = step_state.metrics_state.game_outcomes[
-            step - jit_iterations : step
+            step - jit_iterations: step
         ]
-        agent_b, ties, agent_a = game_outcomes.sum(0).tolist()
-        print(
-            f"step: {i * jit_iterations}, agent a: {agent_a}, ties: {ties}, agent b: {agent_b}"
-        )
+        total_games = step_state.metrics_state.game_outcomes.sum().item()
+        agent_b_x, agent_b_o, ties, agent_a_x, agent_a_o = game_outcomes.sum(0).tolist()
+
+        agent_a_name = static_state.agent_a.get_name()
+        agent_b_name = static_state.agent_b.get_name()
+
+        print(f"step: {(i+1) * jit_iterations}, total games: {total_games}, total steps: {(i+1) * jit_iterations * static_state.env_num}")
+        print(f"  {agent_a_name} x: {agent_a_x}")
+        print(f"  {agent_a_name} o: {agent_a_o}")
+        print(f"  Ties: {ties}")
+        print(f"  {agent_b_name} x: {agent_b_x}")
+        print(f"  {agent_b_name} o: {agent_b_o}")
+        print()
     return step_state
 
 

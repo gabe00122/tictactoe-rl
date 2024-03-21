@@ -1,17 +1,15 @@
 from functools import partial
 from typing import Any
 
-import jax.random
+import random as py_random
 import pygame
+import jax
 from jax import numpy as jnp, random
 from jaxtyping import PRNGKeyArray
 from pathlib import Path
 
 from tictactoe_ai.agent import Agent
-from tictactoe_ai.gamerules import ONGOING
-from tictactoe_ai.gamerules.initialize import initialize_game
-from tictactoe_ai.gamerules.turn import turn
-from tictactoe_ai.gamerules.types import GameState
+from tictactoe_ai.gamerules import ONGOING, initialize_game, turn, GameState
 from tictactoe_ai.minmax.minmax_player import MinmaxAgent
 from tictactoe_ai.model_agent.observation import get_available_actions
 from tictactoe_ai.model.run_settings import load_settings
@@ -104,7 +102,7 @@ def play(agent: Agent, agent_state: Any):
     clock = pygame.time.Clock()
     running = True
 
-    rng_key = random.PRNGKey(0)
+    rng_key = random.PRNGKey(py_random.getrandbits(63))
 
     game_state, rng_key = start_game(agent, agent_state, rng_key)
     board = game_state.board.flatten().tolist()
@@ -124,7 +122,6 @@ def play(agent: Agent, agent_state: Any):
                 )
 
                 board = game_state.board.flatten().tolist()
-                print(game_state.over_result)
 
         # fill the screen with a color to wipe away anything from last frame
         screen.fill("white")
@@ -212,13 +209,13 @@ def render_o(screen: pygame.Surface, pos: tuple[int, int]):
 
 
 def main():
-    # model = MinmaxAgent()
-    # params = model.load(Path("./optimal_play.npy"))
+    model = MinmaxAgent()
+    params = model.load(Path("./optimal_play.npy"))
 
-    settings = load_settings(Path("./run/settings.json"))
-
-    model = ActorCriticAgent(create_actor_critic(settings))
-    params = model.load(Path("./run-selfplay/checkpoint"))
+    # settings = load_settings(Path("./run/settings.json"))
+    #
+    # model = ActorCriticAgent(create_actor_critic(settings))
+    # params = model.load(Path("./run-selfplay/checkpoint"))
 
     play(model, params)
 

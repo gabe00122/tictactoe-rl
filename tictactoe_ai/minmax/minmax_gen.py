@@ -2,9 +2,7 @@ import jax
 import numpy as np
 from jax import numpy as jnp
 
-from tictactoe_ai.gamerules.initialize import initialize_game
-from tictactoe_ai.gamerules.turn import turn
-from tictactoe_ai.gamerules.types import GameState
+from tictactoe_ai.gamerules import ONGOING, WON, turn, initialize_game, GameState
 
 turn = jax.jit(turn)
 
@@ -22,8 +20,11 @@ def minmax(states, state_actions, state: GameState):
     if states[*index] != EMPTY:
         return states[*index]
 
-    if state.over_result != 0:
-        value = state.over_result - 2
+    if state.over_result != ONGOING:
+        if state.over_result == WON:
+            value = -state.active_player
+        else:
+            value = 0
     else:
         first = True
         value = 0

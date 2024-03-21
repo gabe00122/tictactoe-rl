@@ -39,3 +39,7 @@ class Agent(ABC, Generic[S]):
     @abstractmethod
     def save(self, path: Path, state: S):
         pass
+
+    @abstractmethod
+    def get_name(self) -> str:
+        pass

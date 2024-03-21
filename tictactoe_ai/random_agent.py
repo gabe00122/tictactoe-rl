@@ -37,3 +37,6 @@ class RandomAgent(Agent[None]):
 
     def load(self, path: Path) -> None:
         return
+
+    def get_name(self) -> str:
+        return "Random"

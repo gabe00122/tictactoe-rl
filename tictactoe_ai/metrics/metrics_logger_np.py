@@ -23,7 +23,7 @@ class MetricsLoggerNP:
         self.actor_loss = np.zeros(total_steps, dtype=np.float32)
         self.critic_loss = np.zeros(total_steps, dtype=np.float32)
         self.entropy = np.zeros(total_steps, dtype=np.float32)
-        self.game_outcomes = np.zeros((total_steps, 3), dtype=np.int32)
+        self.game_outcomes = np.zeros((total_steps, 5), dtype=np.int32)
 
     def log(self, metrics_frame: MetricsRecorderState):
         frame_length = len(metrics_frame.mean_rewards)
