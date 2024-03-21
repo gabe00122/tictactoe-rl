@@ -42,8 +42,10 @@ class CriticHead(nn.Module):
     @nn.compact
     def __call__(self, inputs):
         value = nn.Dense(
-            1, name="Critic Head", kernel_init=nn.initializers.variance_scaling(
+            1,
+            name="Critic Head",
+            kernel_init=nn.initializers.variance_scaling(
                 1.0 / 100, "fan_avg", "normal"
-            )
+            ),
         )(inputs)
         return jnp.squeeze(value)

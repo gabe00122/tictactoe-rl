@@ -56,10 +56,14 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     )
 
     # state_a, _ = static_state.agent_a.learn(state_a, first_env_state, action, env_state, active_agent == 1)
-    state_b, metrics = static_state.agent_b.learn(state_b, first_env_state, action, env_state, active_agent == -1)
+    state_b, metrics = static_state.agent_b.learn(
+        state_b, first_env_state, action, env_state, active_agent == -1
+    )
 
     # record the win
-    game_outcomes = get_game_outcomes(active_agent, active_player, env_state.over_result).sum(0)
+    game_outcomes = get_game_outcomes(
+        active_agent, active_player, env_state.over_result
+    ).sum(0)
     metrics_state = record_outcome(metrics_state, game_outcomes)
     metrics_state = metrics_recorder.update(metrics_state, metrics)
 
@@ -104,11 +108,23 @@ def advance_turn(
 def get_game_outcomes(active_agent, active_player, over_result):
     return jnp.array(
         [
-            jnp.logical_and(jnp.logical_and(active_agent == -1, over_result == WON), active_player == 1),
-            jnp.logical_and(jnp.logical_and(active_agent == -1, over_result == WON), active_player == -1),
+            jnp.logical_and(
+                jnp.logical_and(active_agent == -1, over_result == WON),
+                active_player == 1,
+            ),
+            jnp.logical_and(
+                jnp.logical_and(active_agent == -1, over_result == WON),
+                active_player == -1,
+            ),
             over_result == DRAW,
-            jnp.logical_and(jnp.logical_and(active_agent == 1, over_result == WON), active_player == 1),
-            jnp.logical_and(jnp.logical_and(active_agent == 1, over_result == WON), active_player == -1),
+            jnp.logical_and(
+                jnp.logical_and(active_agent == 1, over_result == WON),
+                active_player == 1,
+            ),
+            jnp.logical_and(
+                jnp.logical_and(active_agent == 1, over_result == WON),
+                active_player == -1,
+            ),
         ],
         dtype=jnp.int32,
     )
@@ -156,7 +172,7 @@ def train_n_steps(
         step = step_state.metrics_state.step
         # rewards = step_state.metrics_state.mean_rewards[step - jit_iterations : step]
         game_outcomes = step_state.metrics_state.game_outcomes[
-            step - jit_iterations: step
+            step - jit_iterations : step
         ]
         total_games = step_state.metrics_state.game_outcomes.sum().item()
         agent_b_x, agent_b_o, ties, agent_a_x, agent_a_o = game_outcomes.sum(0).tolist()
@@ -164,7 +180,9 @@ def train_n_steps(
         agent_a_name = static_state.agent_a.get_name()
         agent_b_name = static_state.agent_b.get_name()
 
-        print(f"step: {(i+1) * jit_iterations}, total games: {total_games}, total steps: {(i+1) * jit_iterations * static_state.env_num}")
+        print(
+            f"step: {(i+1) * jit_iterations}, total games: {total_games}, total steps: {(i+1) * jit_iterations * static_state.env_num}"
+        )
         print(f"  {agent_a_name} x: {agent_a_x}")
         print(f"  {agent_a_name} o: {agent_a_o}")
         print(f"  Ties: {ties}")

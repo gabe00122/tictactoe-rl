@@ -6,7 +6,12 @@ import orbax.checkpoint as ocp
 from jax import random, numpy as jnp
 from jaxtyping import Int8, Float32, Key, PRNGKeyArray, Array, Bool
 
-from .observation import get_observation, get_observation_vec, get_available_actions, get_available_actions_vec
+from .observation import (
+    get_observation,
+    get_observation_vec,
+    get_available_actions,
+    get_available_actions_vec,
+)
 from .reward import get_done, get_reward
 from ..agent import Agent
 from ..gamerules import GameState
@@ -27,7 +32,7 @@ class ActorCriticAgent(Agent[ActorCriticState]):
         training_state = self.model.init(rng_key)
         return ActorCriticState(
             training_state=training_state,
-            importance=jnp.ones(env_num, dtype=jnp.float32)
+            importance=jnp.ones(env_num, dtype=jnp.float32),
         )
 
     def act(

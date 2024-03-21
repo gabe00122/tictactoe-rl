@@ -17,7 +17,9 @@ class MetricsRecorderState(NamedTuple):
     actor_loss: Float32[Array, "capacity"]
     critic_loss: Float32[Array, "capacity"]
     entropy: Float32[Array, "capacity"]
-    game_outcomes: Int32[Array, "capacity 5"]  # agent a wins x, agent a wins o, tie, agent b wins x, agent b wins 0
+    game_outcomes: Int32[
+        Array, "capacity 5"
+    ]  # agent a wins x, agent a wins o, tie, agent b wins x, agent b wins 0
 
 
 def init(capacity: int, vec_num: int) -> MetricsRecorderState:

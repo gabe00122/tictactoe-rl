@@ -7,10 +7,14 @@ from ..gamerules.over import ONGOING, WON
 
 
 @partial(jax.vmap, in_axes=(0, 0))
-def get_reward(state: GameState, active_player: Bool[Array, "vec"]) -> Float32[Scalar, ""]:
+def get_reward(
+    state: GameState, active_player: Bool[Array, "vec"]
+) -> Float32[Scalar, ""]:
     return jax.lax.cond(
         state.over_result == WON,
-        lambda: jax.lax.cond(active_player, lambda: jnp.float32(1), lambda: jnp.float32(-1)),
+        lambda: jax.lax.cond(
+            active_player, lambda: jnp.float32(1), lambda: jnp.float32(-1)
+        ),
         lambda: jnp.float32(0),
     )
 

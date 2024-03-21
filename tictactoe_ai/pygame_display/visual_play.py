@@ -84,9 +84,9 @@ def handle_click(
             lambda: jax.lax.cond(
                 next_game.over_result == ONGOING,
                 lambda: opponent_turn(agent, agent_state, next_game, rng_key),
-                lambda: (next_game, rng_key)
+                lambda: (next_game, rng_key),
             ),
-            lambda: (game, rng_key)
+            lambda: (game, rng_key),
         )
 
     return jax.lax.cond(

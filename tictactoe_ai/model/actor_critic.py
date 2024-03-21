@@ -91,7 +91,9 @@ class ActorCritic(PyTreeNode):
         # took_turn = jnp.logical_and(took_turn, jnp.isfinite(selected_action_prob))
         actor_loss = jax.lax.cond(
             took_turn.any(),
-            lambda: -jnp.mean(selected_action_prob * td_error * importance, where=took_turn),
+            lambda: -jnp.mean(
+                selected_action_prob * td_error * importance, where=took_turn
+            ),
             lambda: jnp.float32(0),
         )
 
