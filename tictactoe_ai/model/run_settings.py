@@ -3,8 +3,6 @@ from typing import TypedDict
 
 
 class RunSettings(TypedDict):
-    git_hash: str
-    env_name: str
     seed: int
     total_steps: int
     env_num: int
@@ -12,14 +10,11 @@ class RunSettings(TypedDict):
     root_hidden_layers: list[int]
     actor_hidden_layers: list[int]
     critic_hidden_layers: list[int]
-    actor_last_layer_scale: float
-    critic_last_layer_scale: float
     learning_rate: float
-    optimizer: str
     adam_beta: float
     weight_decay: float
     actor_coef: float
-    critic_coef: float
+    entropy_coef: float
 
 
 def save_settings(path, settings):

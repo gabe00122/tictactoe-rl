@@ -26,7 +26,7 @@ class ActorCritic(PyTreeNode):
     discount: float = struct.field(default=0.99)
 
     actor_coef: float = struct.field(default=0.5)
-    critic_coef: float = struct.field(default=1.0)
+    entropy_coef: float = struct.field(default=0.0001)
 
     def __hash__(self):
         return id(self)
@@ -89,17 +89,16 @@ class ActorCritic(PyTreeNode):
 
         # masks of -inf can make the loss inf if they aren't filtered out
         # took_turn = jnp.logical_and(took_turn, jnp.isfinite(selected_action_prob))
-        actor_loss = jax.lax.cond(
+        actor_loss, entropy = jax.lax.cond(
             took_turn.any(),
-            lambda: -jnp.mean(
-                selected_action_prob * td_error * importance, where=took_turn
+            lambda: (
+                -jnp.mean(selected_action_prob * td_error * importance, where=took_turn),
+                jnp.mean(v_entropy_loss(action_probs), where=took_turn),
             ),
-            lambda: jnp.float32(0),
+            lambda: (jnp.float32(0), jnp.float32(0)),
         )
 
-        entropy = jnp.mean(v_entropy_loss(action_probs))
-
-        loss = self.actor_coef * actor_loss + critic_loss
+        loss = self.actor_coef * actor_loss + critic_loss + self.entropy_coef * entropy
 
         # jax.debug.breakpoint()
 

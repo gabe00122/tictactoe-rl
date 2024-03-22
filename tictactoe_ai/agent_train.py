@@ -195,11 +195,11 @@ def train_n_steps(
 def main():
     rng_key = random.PRNGKey(123)
 
-    total_steps = 100000
+    agent_settings = load_settings("./experiments/standard.json")
+    total_steps = agent_settings["total_steps"]
+    env_num = agent_settings["env_num"]
     jit_iterations = 1_000
-    env_num = 128 * 2
 
-    agent_settings = load_settings("./run/settings.json")
     actor_critic = create_actor_critic(agent_settings)
 
     static_state = StaticState(

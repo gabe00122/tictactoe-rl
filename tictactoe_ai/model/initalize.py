@@ -8,7 +8,9 @@ from .actor_critic import ActorCritic, ActorCriticModel
 def create_actor_critic(settings: RunSettings) -> ActorCritic:
     actor_critic_model = ActorCriticModel(
         body=MlpBody(features=settings["root_hidden_layers"]),
+        actor_neck=MlpBody(features=settings["actor_hidden_layers"]),
         actor_head=ActorHead(actions=9),
+        critic_neck=MlpBody(features=settings["critic_hidden_layers"]),
         critic_head=CriticHead(),
     )
 
@@ -24,6 +26,5 @@ def create_actor_critic(settings: RunSettings) -> ActorCritic:
         optimizer=optimizer,
         discount=settings["discount"],
         actor_coef=settings["actor_coef"],
-        critic_coef=settings["critic_coef"],
     )
     return actor_critic

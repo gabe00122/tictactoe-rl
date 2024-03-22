@@ -49,8 +49,10 @@ class MetricsLoggerNP:
                 "actor_loss": self.actor_loss,
                 "critic_loss": self.critic_loss,
                 "entropy": self.entropy,
-                "agent_b_wins": self.game_outcomes[:, 0],
-                "agent_ties": self.game_outcomes[:, 1],
-                "agent_a_wins": self.game_outcomes[:, 2],
+                "agent_b_x": self.game_outcomes[:, 0],
+                "agent_b_o": self.game_outcomes[:, 1],
+                "agent_ties": self.game_outcomes[:, 2],
+                "agent_a_x": self.game_outcomes[:, 3],
+                "agent_a_o": self.game_outcomes[:, 4],
             }
         )
