@@ -17,7 +17,7 @@ class Agent(ABC, Generic[S]):
     @abstractmethod
     def act(
         self, agent_state: S, game_state: GameState, rng_key: Key[Array, ""]
-    ) -> Int8[Array, ""]:
+    ) -> tuple[Int8[Array, ""], Float32[Array, "9"]]:
         # returns an action
         pass
 

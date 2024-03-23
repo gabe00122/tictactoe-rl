@@ -26,5 +26,6 @@ def create_actor_critic(settings: RunSettings) -> ActorCritic:
         optimizer=optimizer,
         discount=settings["discount"],
         actor_coef=settings["actor_coef"],
+        entropy_coef=settings["entropy_coef"]
     )
     return actor_critic

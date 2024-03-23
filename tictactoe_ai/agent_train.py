@@ -94,7 +94,7 @@ def advance_turn(
     env_state = reset_if_done(env_state)
     first_env = env_state
 
-    action = jax.lax.cond(
+    action, _ = jax.lax.cond(
         active_agent == 1,
         lambda: agent_a.act(state_a, env_state, rng_key),
         lambda: agent_b.act(state_b, env_state, rng_key),
@@ -200,12 +200,10 @@ def main():
     env_num = agent_settings["env_num"]
     jit_iterations = 1_000
 
-    actor_critic = create_actor_critic(agent_settings)
-
     static_state = StaticState(
         env_num=env_num,
         agent_a=RandomAgent(),
-        agent_b=ActorCriticAgent(actor_critic),
+        agent_b=ActorCriticAgent(agent_settings),
     )
 
     game_state = initialize_n_games(env_num)

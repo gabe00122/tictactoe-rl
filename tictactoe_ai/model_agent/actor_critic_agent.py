@@ -1,10 +1,10 @@
 from pathlib import Path
 from typing import NamedTuple
 
-import jax
 import orbax.checkpoint as ocp
 from jax import random, numpy as jnp
 from jaxtyping import Int8, Float32, Key, PRNGKeyArray, Array, Bool
+from flax import linen as nn
 
 from .observation import (
     get_observation,
@@ -16,7 +16,9 @@ from .reward import get_done, get_reward
 from ..agent import Agent
 from ..gamerules import GameState
 from ..metrics import Metrics
-from ..model.actor_critic import ActorCritic, TrainingState
+from ..model.actor_critic import TrainingState
+from ..model.initalize import create_actor_critic
+from ..model.run_settings import RunSettings
 
 
 class ActorCriticState(NamedTuple):
@@ -25,8 +27,8 @@ class ActorCriticState(NamedTuple):
 
 
 class ActorCriticAgent(Agent[ActorCriticState]):
-    def __init__(self, model: ActorCritic):
-        self.model = model
+    def __init__(self, settings: RunSettings):
+        self.model = create_actor_critic(settings)
 
     def initialize(self, rng_key: PRNGKeyArray, env_num: int) -> ActorCriticState:
         training_state = self.model.init(rng_key)
@@ -40,13 +42,14 @@ class ActorCriticAgent(Agent[ActorCriticState]):
         agent_state: ActorCriticState,
         game_state: GameState,
         rng_key: Key[Array, ""],
-    ) -> Int8[Array, ""]:
+    ) -> tuple[Int8[Array, ""], Float32[Array, "9"]]:
         obs = get_observation(game_state, game_state.active_player)
         available_actions = get_available_actions(game_state)
-        action = self.model.act(
+        action, logits = self.model.act(
             agent_state.training_state, obs, available_actions, rng_key
         )
-        return action
+        probs = nn.softmax(logits)
+        return action, probs
 
     def learn(
         self,

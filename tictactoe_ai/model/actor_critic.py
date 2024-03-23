@@ -49,7 +49,7 @@ class ActorCritic(PyTreeNode):
         key: PRNGKeyArray,
     ):
         logits, _ = self.model.apply(params.model_params, obs, avalible_actions)
-        return random.categorical(key, logits)
+        return random.categorical(key, logits), logits
 
     def loss(
         self,
@@ -69,7 +69,6 @@ class ActorCritic(PyTreeNode):
 
         action_logits, vf_values = v_model(model_params, obs, available_actions)
 
-        # available_actions is used for the second call because it must be the right shape but the action output isn't used
         _, next_vf_values = v_model(
             jax.lax.stop_gradient(model_params), next_obs, available_actions
         )
@@ -87,8 +86,6 @@ class ActorCritic(PyTreeNode):
         action_probs = v_log_softmax(action_logits)
         selected_action_prob = action_probs[jnp.arange(action_probs.shape[0]), actions]
 
-        # masks of -inf can make the loss inf if they aren't filtered out
-        # took_turn = jnp.logical_and(took_turn, jnp.isfinite(selected_action_prob))
         actor_loss, entropy = jax.lax.cond(
             took_turn.any(),
             lambda: (

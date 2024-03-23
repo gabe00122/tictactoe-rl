@@ -48,7 +48,7 @@ def minmax(states, state_actions, state: GameState):
     return value
 
 
-def main():
+def generate_minmax():
     states = np.full(
         (
             3,
@@ -85,8 +85,5 @@ def main():
         state_actions,
         initialize_game(),
     )
-    np.save("./optimal_play.npy", state_actions)
 
-
-if __name__ == "__main__":
-    main()
+    return state_actions

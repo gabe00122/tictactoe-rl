@@ -13,14 +13,14 @@ class RandomAgent(Agent[None]):
 
     def act(
         self, agent_state: None, game: GameState, rng_key: Key[Array, ""]
-    ) -> Int8[Array, ""]:
+    ) -> tuple[Int8[Array, ""], Float32[Array, "9"]]:
         board = game.board
         available_moves = board.flatten() == 0
 
         count = jnp.count_nonzero(available_moves)
         probs = available_moves / count
 
-        return random.choice(rng_key, jnp.arange(9), p=probs)
+        return random.choice(rng_key, jnp.arange(9), p=probs), probs
 
     def learn(
         self,
