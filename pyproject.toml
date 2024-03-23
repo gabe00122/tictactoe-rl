@@ -28,5 +28,5 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-play = "tictactoe_ai.play:play"
+play-tictactoe = "tictactoe_ai.pygame_display.visual_play:main"
 graph = "tictactoe_ai.extra.xla_graph:main"

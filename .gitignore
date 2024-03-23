@@ -11,3 +11,4 @@ run/
 run-selfplay/
 
 optimal_play.npy
+minmax_cache.npy
