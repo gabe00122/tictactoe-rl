@@ -18,7 +18,7 @@ from ..gamerules import GameState
 from ..metrics import Metrics
 from ..model.actor_critic import TrainingState
 from ..model.initalize import create_actor_critic
-from ..model.run_settings import RunSettings
+from ..model.agent_settings import AgentSettings
 
 
 class ActorCriticState(NamedTuple):
@@ -27,7 +27,7 @@ class ActorCriticState(NamedTuple):
 
 
 class ActorCriticAgent(Agent[ActorCriticState]):
-    def __init__(self, settings: RunSettings):
+    def __init__(self, settings: AgentSettings):
         self.model = create_actor_critic(settings)
 
     def initialize(self, rng_key: PRNGKeyArray, env_num: int) -> ActorCriticState:
@@ -84,18 +84,18 @@ class ActorCriticAgent(Agent[ActorCriticState]):
         return ActorCriticState(model_state, importance), metrics
 
     def load(self, path: Path) -> ActorCriticState:
-        random_params = self.model.init(random.PRNGKey(0))
+        # random_params = self.model.init(random.PRNGKey(0))
 
-        checkpointer = ocp.PyTreeCheckpointer()
-        restore_args = ocp.checkpoint_utils.construct_restore_args(random_params)
+        checkpointer = ocp.StandardCheckpointer()
+        # restore_args = ocp.checkpoint_utils.construct_restore_args(random_params)
         training_state = checkpointer.restore(
-            path.absolute(), item=random_params, restore_args=restore_args
+            path.absolute()
         )
 
         return ActorCriticState(training_state, jnp.ones(1, jnp.float32))
 
     def save(self, path: Path, state: ActorCriticState):
-        checkpointer = ocp.PyTreeCheckpointer()
+        checkpointer = ocp.StandardCheckpointer()
         checkpointer.save(path.absolute(), state.training_state)
 
     def get_name(self) -> str:

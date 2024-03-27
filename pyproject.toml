@@ -5,9 +5,19 @@ description = ""
 authors = ["Gabriel keith <gabe.keith@yahoo.com>"]
 readme = "README.md"
 
+[[tool.poetry.source]]
+name = "PyPi"
+priority = "primary"
+
+# CUDA jax
+#[[tool.poetry.source]]
+#name = "jax-releases"
+#url = "https://storage.googleapis.com/jax-releases/jax_cuda_releases.html"
+#priority = "supplemental"
+
+
 [tool.poetry.dependencies]
 python = "^3.12"
-jax = {extras = ["cpu"], version = "^0.4.24"}
 jaxtyping = "^0.2.25"
 flax = "^0.8.1"
 optax = "^0.2.1"
@@ -22,11 +32,19 @@ ipywidgets = "^8.1.2"
 jupyter-dash = "^0.4.2"
 optuna = "^3.6.0"
 
+# CPU jax
+jax = {extras = ["cpu"], version = "0.4.25" }
+
+# CUDA jax
+#jax = { extras = ["cuda12_pip"], version = "^0.4.25" }
+
+
+[tool.poetry.scripts]
+enjoy = "tictactoe_ai.enjoy:main"
+train = "tictactoe_ai.train:main"
+graph = "tictactoe_ai.extra.xla_graph:main"
+
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.scripts]
-play-tictactoe = "tictactoe_ai.pygame_display.visual_play:main"
-graph = "tictactoe_ai.extra.xla_graph:main"

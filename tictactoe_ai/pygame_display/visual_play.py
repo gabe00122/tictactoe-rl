@@ -1,7 +1,5 @@
-import argparse
 import random as py_random
 from functools import partial
-from pathlib import Path
 from typing import Any, Literal
 
 import jax
@@ -11,15 +9,9 @@ from jaxtyping import PRNGKeyArray, Float32, Array
 
 from tictactoe_ai.agent import Agent
 from tictactoe_ai.gamerules import ONGOING, initialize_game, turn, GameState
-from tictactoe_ai.minmax.mixmax_loader import get_minmax_agent
-from tictactoe_ai.model.run_settings import load_settings
-from tictactoe_ai.model_agent import ActorCriticAgent
 from tictactoe_ai.model_agent.observation import get_available_actions
-from tictactoe_ai.random_agent import RandomAgent
-
-screen_size = 600
-cell_size = screen_size / 3
-margin = 20
+from tictactoe_ai.pygame_display.rendering import render
+from tictactoe_ai.pygame_display.constaints import screen_size, cell_size
 
 player_turn = jax.jit(turn)
 
@@ -141,111 +133,3 @@ def play(agent: Agent, agent_state: Any, play_as: Literal["x", "o", "random"], d
     pygame.quit()
 
 
-def render(screen: pygame.Surface, board: list[int], probs: list[float], display_probs: bool):
-    if display_probs:
-        for i, prob in enumerate(probs):
-            color = pygame.Color(255 - int(prob * 255), 255, 255, 255)
-            x = (i % 3) * cell_size
-            y = (i // 3) * cell_size
-            pygame.draw.rect(screen, color, (x, y, cell_size, cell_size))
-
-    render_board(screen)
-
-    for i, cell in enumerate(board):
-        x = i % 3
-        y = i // 3
-        match cell:
-            case 1:
-                render_x(screen, (x, y))
-            case -1:
-                render_o(screen, (x, y))
-
-
-def render_board(screen: pygame.Surface):
-    color = "grey"
-    line_width = 2
-
-    pygame.draw.line(
-        screen, color, (cell_size, 0), (cell_size, screen_size), line_width
-    )
-    pygame.draw.line(
-        screen, color, (cell_size * 2, 0), (cell_size * 2, screen_size), line_width
-    )
-    pygame.draw.line(
-        screen, color, (0, cell_size), (screen_size, cell_size), line_width
-    )
-    pygame.draw.line(
-        screen, color, (0, cell_size * 2), (screen_size, cell_size * 2), line_width
-    )
-
-
-def render_x(screen: pygame.Surface, pos: tuple[int, int]):
-    color = "black"
-    line_width = 20
-    x, y = pos
-    x *= cell_size
-    y *= cell_size
-
-    pygame.draw.line(
-        screen,
-        color,
-        (x + margin, y + margin),
-        (x + cell_size - margin, y + cell_size - margin),
-        line_width,
-    )
-    pygame.draw.line(
-        screen,
-        color,
-        (x + cell_size - margin, y + margin),
-        (x + margin, y + cell_size - margin),
-        line_width,
-    )
-
-
-def render_o(screen: pygame.Surface, pos: tuple[int, int]):
-    color = "black"
-    line_width = 15
-    x, y = pos
-
-    x *= cell_size
-    y *= cell_size
-
-    pygame.draw.circle(
-        screen,
-        color,
-        (x + cell_size / 2, y + cell_size / 2),
-        (cell_size / 2) - margin,
-        line_width,
-    )
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        prog="play_tictactoe",
-        description="Play against a AI in a visual game of tictactoe",
-    )
-
-    parser.add_argument("--opponent", choices=['random', 'minmax', 'a2c'], default='minmax')
-    parser.add_argument('--model-path')
-    parser.add_argument('--render-preferences', action='store_true')
-    parser.add_argument('--play-as', choices=['x', 'o', 'random'], default='random')
-
-    args = parser.parse_args()
-
-    model = RandomAgent()
-    params = None
-
-    match args.opponent:
-        case 'minmax':
-            model, params = get_minmax_agent()
-        case 'a2c':
-            model_path = Path(args.model_path)
-            settings = load_settings(model_path / 'settings.json')
-            model = ActorCriticAgent(settings)
-            params = model.load(model_path / 'checkpoint')
-
-    play(model, params, args.play_as, args.render_preferences)
-
-
-if __name__ == "__main__":
-    main()

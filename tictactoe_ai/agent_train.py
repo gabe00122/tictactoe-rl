@@ -1,4 +1,5 @@
 import shutil
+
 from functools import partial
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -24,8 +25,9 @@ from tictactoe_ai.model_agent.reward import get_done
 from tictactoe_ai.util import split_n
 from tictactoe_ai.random_agent import RandomAgent
 from tictactoe_ai.minmax.minmax_player import MinmaxAgent
-from tictactoe_ai.model.run_settings import load_settings
+# from tictactoe_ai.model.agent_settings import load_settings, save_settings
 from tictactoe_ai.model.initalize import create_actor_critic
+from tictactoe_ai.train_settings import TrainSettings, load_settings, save_settings
 
 
 class StaticState(NamedTuple):
@@ -193,9 +195,16 @@ def train_n_steps(
 
 
 def main():
+
+
+
+    training_settings = load_settings()
+
     rng_key = random.PRNGKey(123)
 
-    agent_settings = load_settings("./experiments/standard.json")
+    # agent_settings = load_settings("./experiments/standard.json", update_stamp=True)
+
+
     total_steps = agent_settings["total_steps"]
     env_num = agent_settings["env_num"]
     jit_iterations = 1_000
@@ -228,7 +237,10 @@ def main():
 
     save_path = Path("./run-selfplay")
     create_directory(save_path)
+
+    save_settings(save_path / "settings.json", agent_settings)
     save_metrics(save_path / "metrics.parquet", metrics_logger)
+
     static_state.agent_b.save(save_path / "checkpoint", step_state.state_b)
 
 

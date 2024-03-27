@@ -1,11 +1,11 @@
 from flax import linen as nn
 import optax
 from .mlp import MlpBody, ActorHead, CriticHead
-from .run_settings import RunSettings
+from .agent_settings import AgentSettings
 from .actor_critic import ActorCritic, ActorCriticModel
 
 
-def create_actor_critic(settings: RunSettings) -> ActorCritic:
+def create_actor_critic(settings: AgentSettings) -> ActorCritic:
     actor_critic_model = ActorCriticModel(
         body=MlpBody(features=settings["root_hidden_layers"]),
         actor_neck=MlpBody(features=settings["actor_hidden_layers"]),

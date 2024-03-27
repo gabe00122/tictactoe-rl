@@ -8,7 +8,8 @@ def main():
         epilog="Text at the bottom of help",
     )
 
-    # parser.add_argument()
+    parser.add_argument("--settings")
+    parser.add_argument("--output-dir")
     args = parser.parse_args()
 
 
