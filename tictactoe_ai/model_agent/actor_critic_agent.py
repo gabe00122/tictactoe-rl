@@ -84,16 +84,16 @@ class ActorCriticAgent(Agent[ActorCriticState]):
         return ActorCriticState(model_state, importance), metrics
 
     def load(self, path: Path) -> ActorCriticState:
-        # random_params = self.model.init(random.PRNGKey(0))
+        random_params = self.model.init(random.PRNGKey(0))
 
-        checkpointer = ocp.StandardCheckpointer()
-        # restore_args = ocp.checkpoint_utils.construct_restore_args(random_params)
-        training_state = checkpointer.restore(path.absolute())
+        checkpointer = ocp.PyTreeCheckpointer()
+        restore_args = ocp.checkpoint_utils.construct_restore_args(random_params)
+        training_state = checkpointer.restore(path.absolute(), item=random_params, restore_args=restore_args)
 
         return ActorCriticState(training_state, jnp.ones(1, jnp.float32))
 
     def save(self, path: Path, state: ActorCriticState):
-        checkpointer = ocp.StandardCheckpointer()
+        checkpointer = ocp.PyTreeCheckpointer()
         checkpointer.save(path.absolute(), state.training_state)
 
     def get_name(self) -> str:

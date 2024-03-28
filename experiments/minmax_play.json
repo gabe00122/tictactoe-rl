@@ -16,6 +16,6 @@
     "entropy_coef": 0.01
   },
   "opponent": {
-    "type": "self_play"
+    "type": "minmax"
   }
 }

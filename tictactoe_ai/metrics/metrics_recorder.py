@@ -51,10 +51,8 @@ def update(
     # )
 
     # mean_rewards = mean_rewards.at[step].set(finished_rewards.mean())
-    step = step + 1
 
     return state._replace(
-        step=step,
         # finished_reward_recorder_state=finished_reward_recorder_state,
         # mean_rewards=mean_rewards,
         state_value=state.state_value.at[step].set(metrics["state_value"]),

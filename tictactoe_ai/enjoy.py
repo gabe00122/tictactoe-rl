@@ -39,13 +39,17 @@ def main():
     model = RandomAgent()
     params = None
 
-    match args.opponent:
+    opponent = args.opponent
+    if args.model_path is not None:
+        opponent = "a2c"
+
+    match opponent:
         case "minmax":
             model, params = get_minmax_agent()
         case "a2c":
             model_path = Path(args.model_path)
             settings = load_settings(model_path / "settings.json")
-            model = ActorCriticAgent(settings["agent"])
+            model = ActorCriticAgent(settings["agent"], settings["total_steps"])
             params = model.load(model_path / "checkpoint")
 
     play(model, params, args.play_as, args.render_preferences)

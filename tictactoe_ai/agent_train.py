@@ -20,7 +20,7 @@ from tictactoe_ai.util import split_n
 
 class StaticState(NamedTuple):
     env_num: int
-    opponent: Agent | None
+    opponent: Agent
     agent: Agent
     is_self_play: bool
     is_training: bool
@@ -50,7 +50,6 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     metrics_state = step_state.metrics_state
 
     if is_self_play:
-        opponent = agent
         opponent_state = agent_state
 
     rng_key, action_keys = split_n(rng_key, env_num)
@@ -71,9 +70,10 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
         agent_state, metrics = agent.learn(
             agent_state, first_env_state, action, env_state, active_agent == 1
         )
-        opponent_state, _ = opponent.learn(
-            opponent_state, first_env_state, action, env_state, active_agent == -1
-        )
+        # opponent_state, _ = opponent.learn(
+        #     opponent_state, first_env_state, action, env_state, active_agent == -1
+        # )
+        metrics_state = metrics_recorder.update(metrics_state, metrics)
 
     # record the win
     game_outcomes = get_game_outcomes(
@@ -81,8 +81,7 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
     ).sum(0)
     metrics_state = record_outcome(metrics_state, game_outcomes)
 
-    if is_training:
-        metrics_state = metrics_recorder.update(metrics_state, metrics)
+    metrics_state = metrics_state._replace(step=metrics_state.step + 1)
 
     dones = get_done(env_state)
     rng_key, active_agent_keys = random.split(rng_key)
@@ -189,10 +188,11 @@ def train_n_steps(
         step = step_state.metrics_state.step
         # rewards = step_state.metrics_state.mean_rewards[step - jit_iterations : step]
         game_outcomes = step_state.metrics_state.game_outcomes[
-            step - jit_iterations : step
+            step - jit_iterations: step
         ]
-        total_games = step_state.metrics_state.game_outcomes.sum().item()
-        agent_a_x, agent_a_o, ties, agent_b_x, agent_b_o = game_outcomes.sum(0).tolist()
+
+        total_games = game_outcomes.sum().item()
+        agent_a_x, agent_a_o, ties, agent_b_x, agent_b_o = (game_outcomes.sum(0) / total_games).tolist()
 
         agent_a_name = static_state.opponent.get_name()
         agent_b_name = static_state.agent.get_name()
@@ -200,10 +200,10 @@ def train_n_steps(
         print(
             f"step: {(i+1) * jit_iterations}, total games: {total_games}, total steps: {(i+1) * jit_iterations * static_state.env_num}"
         )
-        print(f"  {agent_a_name} x: {agent_a_x}")
-        print(f"  {agent_a_name} o: {agent_a_o}")
-        print(f"  Ties: {ties}")
-        print(f"  {agent_b_name} x: {agent_b_x}")
-        print(f"  {agent_b_name} o: {agent_b_o}")
+        print(f"  {agent_a_name} x: {agent_a_x:.0%}")
+        print(f"  {agent_a_name} o: {agent_a_o:.0%}")
+        print(f"  Ties: {ties:.0%}")
+        print(f"  {agent_b_name} x: {agent_b_x:.0%}")
+        print(f"  {agent_b_name} o: {agent_b_o:.0%}")
         print()
     return step_state

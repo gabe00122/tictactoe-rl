@@ -29,7 +29,6 @@ def main():
     settings_path = args.settings
     settings = load_settings(settings_path, update_stamp=True)
 
-    print(settings)
     rng_key = random.PRNGKey(settings["seed"])
     env_num = settings["env_num"]
     total_steps = settings["total_steps"]
@@ -45,7 +44,7 @@ def main():
         case "minmax":
             opponent = minmax_agent
         case _:
-            opponent = None
+            opponent = agent
 
     static_state = StaticState(
         settings["env_num"],
@@ -62,15 +61,24 @@ def main():
         active_agent_keys, jnp.array([-1, 1], dtype=jnp.int8), (env_num,)
     )
 
+    if settings["opponent"]["type"] == "minmax":
+        opponent_state = minmax_state
+    else:
+        opponent_state = static_state.opponent.initialize(agent_a_key, env_num)
+
     step_state = StepState(
         rng_key=rng_key,
-        opponent_state=static_state.opponent.initialize(agent_a_key, env_num),
+        opponent_state=opponent_state,
         agent_state=static_state.agent.initialize(agent_b_key, env_num),
         active_agent=active_agents,
         env_state=game_state,
         metrics_state=metrics_recorder.init(total_steps, env_num),
     )
     step_state = train_n_steps(static_state, total_steps, jit_iterations, step_state)
+
+    if settings["opponent"]["type"] == "minmax":
+        minmax_state = step_state.opponent_state
+    # ends eval
 
     metrics_logger = MetricsLoggerNP(total_steps)
     metrics_logger.log(step_state.metrics_state)
@@ -82,6 +90,48 @@ def main():
     save_metrics(save_path / "metrics.parquet", metrics_logger)
 
     static_state.agent.save(save_path / "checkpoint", step_state.agent_state)
+
+    # evaluate
+    print("Evaluating vs minmax")
+    step_state = agent_evaluation(static_state, step_state, minmax_agent, minmax_state)
+    minmax_score = score_game_outcomes(step_state)
+
+    print("Evaluating vs random")
+    step_state = agent_evaluation(static_state, step_state, random_agent, None)
+    random_score = score_game_outcomes(step_state)
+    print(f"Minmax Score: {minmax_score}, Random Score: {random_score}, Combined: {(minmax_score + random_score) / 2}")
+
+
+def agent_evaluation(static_state: StaticState, step_state: StepState, opponent, opponent_state):
+    env_num = 128
+    rng_key = step_state.rng_key
+    rng_key, active_agent_keys = random.split(rng_key)
+    active_agents = random.choice(
+        active_agent_keys, jnp.array([-1, 1], dtype=jnp.int8), (env_num,)
+    )
+    game_state = initialize_n_games(env_num)
+
+    static_state = static_state._replace(
+        opponent=opponent,
+        is_self_play=False,
+        is_training=False,
+    )
+    step_state = step_state._replace(
+        rng_key=rng_key,
+        opponent_state=opponent_state,
+        active_agent=active_agents,
+        env_state=game_state,
+        metrics_state=metrics_recorder.init(1000, env_num),
+    )
+    return train_n_steps(static_state, 1000, 1000, step_state)
+
+
+def score_game_outcomes(step_state: StepState) -> float:
+    outcomes = step_state.metrics_state.game_outcomes
+    total_games = outcomes.sum()
+    agent_a_x, agent_a_o, ties, agent_b_x, agent_b_o = (outcomes.sum(0) / total_games).tolist()
+    score = (agent_b_x + agent_b_o) - (agent_a_x + agent_a_o)
+    return score
 
 
 def create_directory(path: Path):
