@@ -197,13 +197,18 @@ def train_n_steps(
         agent_a_name = static_state.opponent.get_name()
         agent_b_name = static_state.agent.get_name()
 
+        if static_state.is_self_play:
+            agent_a_x += agent_b_x
+            agent_a_o += agent_b_o
+
         print(
             f"step: {(i+1) * jit_iterations}, total games: {total_games}, total steps: {(i+1) * jit_iterations * static_state.env_num}"
         )
         print(f"  {agent_a_name} x: {agent_a_x:.0%}")
         print(f"  {agent_a_name} o: {agent_a_o:.0%}")
         print(f"  Ties: {ties:.0%}")
-        print(f"  {agent_b_name} x: {agent_b_x:.0%}")
-        print(f"  {agent_b_name} o: {agent_b_o:.0%}")
+        if not static_state.is_self_play:
+            print(f"  {agent_b_name} x: {agent_b_x:.0%}")
+            print(f"  {agent_b_name} o: {agent_b_o:.0%}")
         print()
     return step_state
