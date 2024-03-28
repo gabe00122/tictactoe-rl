@@ -191,7 +191,7 @@ def train_n_steps(
             step - jit_iterations: step
         ]
 
-        total_games = game_outcomes.sum().item()
+        total_games = step_state.metrics_state.game_outcomes.sum().item()
         agent_a_x, agent_a_o, ties, agent_b_x, agent_b_o = (game_outcomes.sum(0) / total_games).tolist()
 
         agent_a_name = static_state.opponent.get_name()
