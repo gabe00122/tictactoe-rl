@@ -1,8 +1,9 @@
 
 # Deep Reinforcement TicTacToe
 
-Work in progress implementation of a training script for TicTacToe using deep reinforcement learning.
-
+A practice project using deep reinforcement with self play to learn tic-tac-toe.
+This project includes a vectorized jax implementation of tictactoe as well as a custom actor critic model similar to a2c.
+<img width="712" alt="Screenshot 2024-03-27 at 10 34 12 PM" src="https://github.com/gabe00122/tictactoe-rl/assets/4421994/4ba40616-354b-4f5c-8df6-8948de3c4b6f">
 
 
 ## Installation
@@ -46,7 +47,7 @@ Here's an example experiment .json
   "agent": {
     "type": "actor_critic", // only "actor_critic" for now
     "discount": 0.99, // the discounted reward coefficient 
-    "root_hidden_layers": [], // the shared mlp layers between the actor and the critic. More numbers represent depth and the magnitude represents width.
+    "root_hidden_layers": [64, 64], // the shared mlp layers between the actor and the critic. More numbers represent depth and the magnitude represents width.
     "actor_hidden_layers": [32, 32, 32, 32], // the mlp network specific to the actor
     "critic_hidden_layers": [32, 32, 32, 32],// the mlp network specific to the critic
     "learning_rate": 0.0001, // the adam learning rate, this is decreased to zero as training pregresses
