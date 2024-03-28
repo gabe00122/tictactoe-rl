@@ -1,11 +1,10 @@
-from flax import linen as nn
 import optax
 from .mlp import MlpBody, ActorHead, CriticHead
 from .agent_settings import AgentSettings
 from .actor_critic import ActorCritic, ActorCriticModel
 
 
-def create_actor_critic(settings: AgentSettings) -> ActorCritic:
+def create_actor_critic(settings: AgentSettings, total_steps: int) -> ActorCritic:
     actor_critic_model = ActorCriticModel(
         body=MlpBody(features=settings["root_hidden_layers"]),
         actor_neck=MlpBody(features=settings["actor_hidden_layers"]),
@@ -15,7 +14,7 @@ def create_actor_critic(settings: AgentSettings) -> ActorCritic:
     )
 
     optimizer = optax.adamw(
-        optax.linear_schedule(settings["learning_rate"], 0, settings["total_steps"]),
+        optax.linear_schedule(settings["learning_rate"], 0, total_steps),
         b1=settings["adam_beta"],
         b2=settings["adam_beta"],
         weight_decay=settings["weight_decay"],
@@ -26,6 +25,6 @@ def create_actor_critic(settings: AgentSettings) -> ActorCritic:
         optimizer=optimizer,
         discount=settings["discount"],
         actor_coef=settings["actor_coef"],
-        entropy_coef=settings["entropy_coef"]
+        entropy_coef=settings["entropy_coef"],
     )
     return actor_critic

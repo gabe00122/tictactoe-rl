@@ -2,7 +2,9 @@ import pygame
 from tictactoe_ai.pygame_display.constaints import screen_size, cell_size, margin
 
 
-def render(screen: pygame.Surface, board: list[int], probs: list[float], display_probs: bool):
+def render(
+    screen: pygame.Surface, board: list[int], probs: list[float], display_probs: bool
+):
     if display_probs:
         for i, prob in enumerate(probs):
             color = pygame.Color(255 - int(prob * 255), 255, 255, 255)

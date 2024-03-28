@@ -4,7 +4,9 @@ from .minmax_player import MinmaxAgent, MinmaxState
 from .minmax_gen import generate_minmax
 
 
-def get_minmax_agent(cache_path: str | Path = "./minmax_cache.npy") -> tuple[MinmaxAgent, MinmaxState]:
+def get_minmax_agent(
+    cache_path: str | Path = "./minmax_cache.npy",
+) -> tuple[MinmaxAgent, MinmaxState]:
     cache_path = Path(cache_path)
     agent = MinmaxAgent()
 

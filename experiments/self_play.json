@@ -1,0 +1,21 @@
+{
+  "seed": "random",
+  "total_steps": 100000,
+  "jit_steps": 1000,
+  "env_num": 128,
+  "agent": {
+    "type": "actor_critic",
+    "discount": 0.99,
+    "root_hidden_layers": [],
+    "actor_hidden_layers": [32, 32, 32, 32],
+    "critic_hidden_layers": [32, 32, 32, 32],
+    "learning_rate": 0.0001,
+    "adam_beta": 0.99,
+    "weight_decay": 0,
+    "actor_coef": 0.2,
+    "entropy_coef": 0.01
+  },
+  "opponent": {
+    "type": "random"
+  }
+}

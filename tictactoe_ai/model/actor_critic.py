@@ -89,7 +89,9 @@ class ActorCritic(PyTreeNode):
         actor_loss, entropy = jax.lax.cond(
             took_turn.any(),
             lambda: (
-                -jnp.mean(selected_action_prob * td_error * importance, where=took_turn),
+                -jnp.mean(
+                    selected_action_prob * td_error * importance, where=took_turn
+                ),
                 jnp.mean(v_entropy_loss(action_probs), where=took_turn),
             ),
             lambda: (jnp.float32(0), jnp.float32(0)),

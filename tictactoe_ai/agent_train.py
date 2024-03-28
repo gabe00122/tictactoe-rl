@@ -1,7 +1,4 @@
-import shutil
-
 from functools import partial
-from pathlib import Path
 from typing import Any, NamedTuple
 
 import jax
@@ -10,64 +7,82 @@ from jaxtyping import Array, Scalar, PRNGKeyArray, Key, Int8, Int32, Bool
 
 from tictactoe_ai.agent import Agent
 from tictactoe_ai.gamerules import (
-    initialize_n_games,
     turn,
     reset_if_done,
     GameState,
     DRAW,
-    ONGOING,
     WON,
 )
 from tictactoe_ai.metrics import metrics_recorder, MetricsRecorderState
-from tictactoe_ai.metrics.metrics_logger_np import MetricsLoggerNP
-from tictactoe_ai.model_agent import ActorCriticAgent
 from tictactoe_ai.model_agent.reward import get_done
 from tictactoe_ai.util import split_n
-from tictactoe_ai.random_agent import RandomAgent
-from tictactoe_ai.minmax.minmax_player import MinmaxAgent
-# from tictactoe_ai.model.agent_settings import load_settings, save_settings
-from tictactoe_ai.model.initalize import create_actor_critic
-from tictactoe_ai.train_settings import TrainSettings, load_settings, save_settings
 
 
 class StaticState(NamedTuple):
     env_num: int
-    agent_a: Agent
-    agent_b: Agent
+    opponent: Agent | None
+    agent: Agent
+    is_self_play: bool
+    is_training: bool
 
 
 class StepState(NamedTuple):
     rng_key: PRNGKeyArray
-    state_a: Any
-    state_b: Any
+    opponent_state: Any
+    agent_state: Any
     active_agent: Int8[Array, "envs"]
     env_state: GameState
     metrics_state: MetricsRecorderState
 
 
 def train_step(static_state: StaticState, step_state: StepState) -> StepState:
-    env_num, agent_a, agent_b = static_state
-    rng_key, state_a, state_b, active_agent, env_state, metrics_state = step_state
+    env_num = static_state.env_num
+    opponent = static_state.opponent
+    agent = static_state.agent
+    is_self_play = static_state.is_self_play
+    is_training = static_state.is_training
+
+    rng_key = step_state.rng_key
+    opponent_state = step_state.opponent_state
+    agent_state = step_state.agent_state
+    active_agent = step_state.active_agent
+    env_state = step_state.env_state
+    metrics_state = step_state.metrics_state
+
+    if is_self_play:
+        opponent = agent
+        opponent_state = agent_state
 
     rng_key, action_keys = split_n(rng_key, env_num)
     active_player = env_state.active_player
 
     # first_env_state: is a temporary solution
     env_state, action, first_env_state = advance_turn(
-        env_state, active_agent, agent_a, state_b, agent_b, state_b, action_keys
+        env_state,
+        active_agent,
+        agent,
+        agent_state,
+        opponent,
+        opponent_state,
+        action_keys,
     )
 
-    # state_a, _ = static_state.agent_a.learn(state_a, first_env_state, action, env_state, active_agent == 1)
-    state_b, metrics = static_state.agent_b.learn(
-        state_b, first_env_state, action, env_state, active_agent == -1
-    )
+    if is_training:
+        agent_state, metrics = agent.learn(
+            agent_state, first_env_state, action, env_state, active_agent == 1
+        )
+        opponent_state, _ = opponent.learn(
+            opponent_state, first_env_state, action, env_state, active_agent == -1
+        )
 
     # record the win
     game_outcomes = get_game_outcomes(
         active_agent, active_player, env_state.over_result
     ).sum(0)
     metrics_state = record_outcome(metrics_state, game_outcomes)
-    metrics_state = metrics_recorder.update(metrics_state, metrics)
+
+    if is_training:
+        metrics_state = metrics_recorder.update(metrics_state, metrics)
 
     dones = get_done(env_state)
     rng_key, active_agent_keys = random.split(rng_key)
@@ -75,8 +90,8 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
 
     return StepState(
         rng_key=rng_key,
-        state_a=state_a,
-        state_b=state_b,
+        agent_state=agent_state,
+        opponent_state=opponent_state,
         env_state=env_state,
         active_agent=active_agent,
         metrics_state=metrics_state,
@@ -177,10 +192,10 @@ def train_n_steps(
             step - jit_iterations : step
         ]
         total_games = step_state.metrics_state.game_outcomes.sum().item()
-        agent_b_x, agent_b_o, ties, agent_a_x, agent_a_o = game_outcomes.sum(0).tolist()
+        agent_a_x, agent_a_o, ties, agent_b_x, agent_b_o = game_outcomes.sum(0).tolist()
 
-        agent_a_name = static_state.agent_a.get_name()
-        agent_b_name = static_state.agent_b.get_name()
+        agent_a_name = static_state.opponent.get_name()
+        agent_b_name = static_state.agent.get_name()
 
         print(
             f"step: {(i+1) * jit_iterations}, total games: {total_games}, total steps: {(i+1) * jit_iterations * static_state.env_num}"
@@ -192,67 +207,3 @@ def train_n_steps(
         print(f"  {agent_b_name} o: {agent_b_o}")
         print()
     return step_state
-
-
-def main():
-
-
-
-    training_settings = load_settings()
-
-    rng_key = random.PRNGKey(123)
-
-    # agent_settings = load_settings("./experiments/standard.json", update_stamp=True)
-
-
-    total_steps = agent_settings["total_steps"]
-    env_num = agent_settings["env_num"]
-    jit_iterations = 1_000
-
-    static_state = StaticState(
-        env_num=env_num,
-        agent_a=RandomAgent(),
-        agent_b=ActorCriticAgent(agent_settings),
-    )
-
-    game_state = initialize_n_games(env_num)
-
-    rng_key, agent_a_key, agent_b_key, active_agent_keys = random.split(rng_key, 4)
-    active_agents = random.choice(
-        active_agent_keys, jnp.array([-1, 1], dtype=jnp.int8), (env_num,)
-    )
-
-    step_state = StepState(
-        rng_key=rng_key,
-        state_a=static_state.agent_a.initialize(agent_a_key, env_num),
-        state_b=static_state.agent_b.initialize(agent_b_key, env_num),
-        active_agent=active_agents,
-        env_state=game_state,
-        metrics_state=metrics_recorder.init(total_steps, env_num),
-    )
-    step_state = train_n_steps(static_state, total_steps, jit_iterations, step_state)
-
-    metrics_logger = MetricsLoggerNP(total_steps)
-    metrics_logger.log(step_state.metrics_state)
-
-    save_path = Path("./run-selfplay")
-    create_directory(save_path)
-
-    save_settings(save_path / "settings.json", agent_settings)
-    save_metrics(save_path / "metrics.parquet", metrics_logger)
-
-    static_state.agent_b.save(save_path / "checkpoint", step_state.state_b)
-
-
-def create_directory(path: Path):
-    if path.exists():
-        shutil.rmtree(path)
-    path.mkdir(parents=True, exist_ok=True)
-
-
-def save_metrics(path: Path, metrics: MetricsLoggerNP):
-    metrics.get_dataframe().to_parquet(path, index=False)
-
-
-if __name__ == "__main__":
-    main()

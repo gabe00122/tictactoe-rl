@@ -27,8 +27,8 @@ class ActorCriticState(NamedTuple):
 
 
 class ActorCriticAgent(Agent[ActorCriticState]):
-    def __init__(self, settings: AgentSettings):
-        self.model = create_actor_critic(settings)
+    def __init__(self, settings: AgentSettings, total_steps: int):
+        self.model = create_actor_critic(settings, total_steps)
 
     def initialize(self, rng_key: PRNGKeyArray, env_num: int) -> ActorCriticState:
         training_state = self.model.init(rng_key)
@@ -88,9 +88,7 @@ class ActorCriticAgent(Agent[ActorCriticState]):
 
         checkpointer = ocp.StandardCheckpointer()
         # restore_args = ocp.checkpoint_utils.construct_restore_args(random_params)
-        training_state = checkpointer.restore(
-            path.absolute()
-        )
+        training_state = checkpointer.restore(path.absolute())
 
         return ActorCriticState(training_state, jnp.ones(1, jnp.float32))
 

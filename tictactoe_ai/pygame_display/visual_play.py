@@ -40,12 +40,17 @@ def agent_goes_first(
     return game, rng_key, probs
 
 
-def player_goes_first(rng_key: PRNGKeyArray) -> tuple[GameState, PRNGKeyArray, Float32[Array, "9"]]:
+def player_goes_first(
+    rng_key: PRNGKeyArray,
+) -> tuple[GameState, PRNGKeyArray, Float32[Array, "9"]]:
     return initialize_game(), rng_key, jnp.zeros((9,), dtype=jnp.float32)
 
 
 def start_game(
-    agent: Agent, agent_state: Any, rng_key: PRNGKeyArray, play_as: Literal["x", "o", "random"]
+    agent: Agent,
+    agent_state: Any,
+    rng_key: PRNGKeyArray,
+    play_as: Literal["x", "o", "random"],
 ) -> tuple[GameState, PRNGKeyArray, Float32[Array, "9"]]:
     match play_as:
         case "x":
@@ -96,7 +101,12 @@ def handle_click(
     )
 
 
-def play(agent: Agent, agent_state: Any, play_as: Literal["x", "o", "random"], display_probs: bool):
+def play(
+    agent: Agent,
+    agent_state: Any,
+    play_as: Literal["x", "o", "random"],
+    display_probs: bool,
+):
     pygame.init()
     screen = pygame.display.set_mode((screen_size, screen_size))
     clock = pygame.time.Clock()
@@ -131,5 +141,3 @@ def play(agent: Agent, agent_state: Any, play_as: Literal["x", "o", "random"], d
         clock.tick(60)  # limits FPS to 60
 
     pygame.quit()
-
-
