@@ -37,26 +37,26 @@ Training runs use json files to describe the hyper parameter
 ```
 
 Here's an example experiment .json
-```json
+```javascript
 {
-  "seed": "random", # seed can be a integer or the word "random"
-  "total_steps": 10000, # how many turns to train for times the env_num
-  "jit_steps": 1000, # how many training steps/turns to perform in a single jax operation
-  "env_num": 128, # the number of simultaneous games to simulate at once. This also constitutes a batch of data during training.
+  "seed": "random", // seed can be a integer or the word "random"
+  "total_steps": 10000, // how many turns to train for times the env_num
+  "jit_steps": 1000, // how many training steps/turns to perform in a single jax operation
+  "env_num": 128, // the number of simultaneous games to simulate at once. This also constitutes a batch of data during training.
   "agent": {
-    "type": "actor_critic", # only "actor_critic" for now
-    "discount": 0.99, # the discounted reward coefficient 
-    "root_hidden_layers": [], # the shared mlp layers between the actor and the critic. More numbers represent depth and the magnitude represents width.
-    "actor_hidden_layers": [32, 32, 32, 32], # the mlp network specific to the actor
-    "critic_hidden_layers": [32, 32, 32, 32],# the mlp network specific to the critic
-    "learning_rate": 0.0001, # the adam learning rate, this is decreased to zero as training pregresses
-    "adam_beta": 0.99, # both beta1 and beta2 values for adam
-    "weight_decay": 0, # the l2 regularization coefficient 
-    "actor_coef": 0.2, # a coefficient for the actor part of the loss. The ciric coefficient is always assumed to be 1.0
-    "entropy_coef": 0.01 # a coefficient for the entropy of the action distribution if its added to the loss
+    "type": "actor_critic", // only "actor_critic" for now
+    "discount": 0.99, // the discounted reward coefficient 
+    "root_hidden_layers": [], // the shared mlp layers between the actor and the critic. More numbers represent depth and the magnitude represents width.
+    "actor_hidden_layers": [32, 32, 32, 32], // the mlp network specific to the actor
+    "critic_hidden_layers": [32, 32, 32, 32],// the mlp network specific to the critic
+    "learning_rate": 0.0001, // the adam learning rate, this is decreased to zero as training pregresses
+    "adam_beta": 0.99, // both beta1 and beta2 values for adam
+    "weight_decay": 0, // the l2 regularization coefficient 
+    "actor_coef": 0.2, // a coefficient for the actor part of the loss. The ciric coefficient is always assumed to be 1.0
+    "entropy_coef": 0.01 // a coefficient for the entropy of the action distribution if its added to the loss
   },
   "opponent": {
-    "type": "minmax" # determines what the agent is trained against. Can be "minmax", "random" or "self-play".
+    "type": "minmax" // determines what the agent is trained against. Can be "minmax", "random" or "self-play".
   }
 }
 ```
