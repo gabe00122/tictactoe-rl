@@ -103,7 +103,7 @@ def main():
 
 
 def agent_evaluation(static_state: StaticState, step_state: StepState, opponent, opponent_state):
-    env_num = 128
+    env_num = static_state.env_num
     rng_key = step_state.rng_key
     rng_key, active_agent_keys = random.split(rng_key)
     active_agents = random.choice(
