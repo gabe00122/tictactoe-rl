@@ -33,6 +33,8 @@ class StepState(NamedTuple):
     active_agent: Int8[Array, "envs"]
     env_state: GameState
     metrics_state: MetricsRecorderState
+    step: Int32[Scalar, ""]
+    total_steps: Int32[Scalar, ""]
 
 
 def train_step(static_state: StaticState, step_state: StepState) -> StepState:
@@ -68,7 +70,7 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
 
     if is_training:
         agent_state, metrics = agent.learn(
-            agent_state, first_env_state, action, env_state, active_agent == 1
+            agent_state, first_env_state, action, env_state, active_agent == 1, step_state.step, step_state.total_steps
         )
         # opponent_state, _ = opponent.learn(
         #     opponent_state, first_env_state, action, env_state, active_agent == -1
@@ -94,6 +96,8 @@ def train_step(static_state: StaticState, step_state: StepState) -> StepState:
         env_state=env_state,
         active_agent=active_agent,
         metrics_state=metrics_state,
+        step=step_state.step + 1,
+        total_steps=step_state.total_steps,
     )
 
 

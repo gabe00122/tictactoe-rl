@@ -62,6 +62,8 @@ class ActorCritic(PyTreeNode):
         done: Bool[Array, "vec"],
         importance: Float32[Array, "vec"],
         took_turn: Bool[Array, "vec"],
+        step: Int[Scalar, ""],
+        total_steps: Int[Scalar, ""],
     ) -> tuple[Float32[Scalar, ""], Metrics]:
         v_model = jax.vmap(self.model.apply, (None, 0, 0), (0, 0))
         v_entropy_loss = jax.vmap(entropy_loss)
@@ -97,6 +99,9 @@ class ActorCritic(PyTreeNode):
             lambda: (jnp.float32(0), jnp.float32(0)),
         )
 
+        progress = step.astype(jnp.float32) / total_steps.astype(jnp.float32)
+        entropy *= 1.0 - progress
+
         loss = self.actor_coef * actor_loss + critic_loss + self.entropy_coef * entropy
 
         # jax.debug.breakpoint()
@@ -122,6 +127,8 @@ class ActorCritic(PyTreeNode):
         done: Bool[Array, "vec"],
         importance: Float32[Array, "vec"],
         took_turn: Bool[Array, "vec"],
+        step: Int[Scalar, ""],
+        total_steps: Int[Scalar, ""],
     ):
         loss_fn = jax.value_and_grad(self.loss, has_aux=True)
         (loss, metrics), grad = loss_fn(
@@ -134,6 +141,8 @@ class ActorCritic(PyTreeNode):
             done,
             importance,
             took_turn,
+            step,
+            total_steps
         )
 
         updates, opt_state = self.optimizer.update(
@@ -155,6 +164,8 @@ class ActorCritic(PyTreeNode):
         done: Bool[Array, "vec"],
         importance: Float32[Array, "vec"],
         took_turn: Bool[Array, "vec"],
+        step: Int[Scalar, ""],
+        total_steps: Int[Scalar, ""],
     ):
         params, metrics = self.update_model(
             params,
@@ -166,6 +177,8 @@ class ActorCritic(PyTreeNode):
             done,
             importance,
             took_turn,
+            step,
+            total_steps
         )
 
         # set the importance back to 1 if it's the end of an episode

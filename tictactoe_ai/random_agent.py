@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from tictactoe_ai.gamerules.types import GameState
-from jaxtyping import PRNGKeyArray, Int8, Float32, Key, Bool
+from jaxtyping import PRNGKeyArray, Int8, Float32, Key, Bool, Int, Scalar
 from jax import numpy as jnp, random, Array
 from tictactoe_ai.agent import Agent
 from tictactoe_ai.metrics import Metrics, empty_metrics
@@ -29,6 +29,8 @@ class RandomAgent(Agent[None]):
         actions: Int8[Array, "vec"],
         next_obs: GameState,
         active_agents: Int8[Array, "vec"],
+        step: Int[Scalar, ""],
+        total_steps: Int[Scalar, ""],
     ) -> tuple[None, Metrics]:
         return None, empty_metrics()
 

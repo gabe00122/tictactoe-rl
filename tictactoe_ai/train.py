@@ -1,8 +1,10 @@
 import argparse
 import shutil
 from pathlib import Path
+from os import PathLike
 
 from jax import random, numpy as jnp
+
 
 from tictactoe_ai.agent_train import StepState, StaticState
 from tictactoe_ai.agent_train import train_n_steps
@@ -12,7 +14,7 @@ from tictactoe_ai.metrics.metrics_logger_np import MetricsLoggerNP
 from tictactoe_ai.minmax.minmax_loader import get_minmax_agent
 from tictactoe_ai.model_agent import ActorCriticAgent
 from tictactoe_ai.random_agent import RandomAgent
-from tictactoe_ai.train_settings import load_settings, save_settings
+from tictactoe_ai.train_settings import load_settings, save_settings, TrainSettings
 
 
 def main():
@@ -28,7 +30,10 @@ def main():
 
     settings_path = args.settings
     settings = load_settings(settings_path, update_stamp=True)
+    train(settings, args.output)
 
+
+def train(settings: TrainSettings, output: str | PathLike[str]) -> float:
     rng_key = random.PRNGKey(settings["seed"])
     env_num = settings["env_num"]
     total_steps = settings["total_steps"]
@@ -73,6 +78,8 @@ def main():
         active_agent=active_agents,
         env_state=game_state,
         metrics_state=metrics_recorder.init(total_steps, env_num),
+        step=jnp.int32(0),
+        total_steps=jnp.int32(total_steps)
     )
     step_state = train_n_steps(static_state, total_steps, jit_iterations, step_state)
 
@@ -83,7 +90,7 @@ def main():
     metrics_logger = MetricsLoggerNP(total_steps)
     metrics_logger.log(step_state.metrics_state)
 
-    save_path = Path(args.output)
+    save_path = Path(output)
     create_directory(save_path)
 
     save_settings(save_path / "settings.json", settings)
@@ -99,8 +106,10 @@ def main():
     print("Evaluating vs random")
     step_state = agent_evaluation(static_state, step_state, random_agent, None)
     random_score = score_game_outcomes(step_state)
-    print(f"Minmax Score: {minmax_score}, Random Score: {random_score}, Combined: {(minmax_score + random_score) / 2}")
+    combined_score = (minmax_score + random_score) / 2
+    print(f"Minmax Score: {minmax_score}, Random Score: {random_score}, Combined: {combined_score}")
 
+    return combined_score
 
 def agent_evaluation(static_state: StaticState, step_state: StepState, opponent, opponent_state):
     env_num = 128
