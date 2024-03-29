@@ -3,7 +3,7 @@ from typing import NamedTuple
 
 import orbax.checkpoint as ocp
 from jax import random, numpy as jnp
-from jaxtyping import Int8, Float32, Key, PRNGKeyArray, Array, Bool
+from jaxtyping import Int8, Float32, Key, PRNGKeyArray, Array, Bool, Int, Scalar
 from flax import linen as nn
 
 from .observation import (
@@ -58,6 +58,8 @@ class ActorCriticAgent(Agent[ActorCriticState]):
         actions: Int8[Array, "vec"],
         next_game: GameState,
         is_active_agent: Bool[Array, "vec"],
+        step: Int[Scalar, ""],
+        total_steps: Int[Scalar, ""],
     ) -> tuple[ActorCriticState, Metrics]:
         player_id = jnp.where(is_active_agent, game.active_player, -game.active_player)
 
@@ -79,6 +81,8 @@ class ActorCriticAgent(Agent[ActorCriticState]):
             dones,
             agent_state.importance,
             is_active_agent,
+            step,
+            total_steps,
         )
 
         return ActorCriticState(model_state, importance), metrics

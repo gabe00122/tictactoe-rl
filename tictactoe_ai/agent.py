@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic
 from pathlib import Path
-from jaxtyping import Array, Int8, Key, Float32, PRNGKeyArray, Bool
+from jaxtyping import Array, Int8, Key, Float32, PRNGKeyArray, Int, Scalar
 
 from .gamerules.types import GameState
 from .metrics import Metrics
@@ -29,6 +29,8 @@ class Agent(ABC, Generic[S]):
         actions: Int8[Array, "vec"],
         next_obs: GameState,
         active_agents: Int8[Array, "vec"],
+        step: Int[Scalar, ""],
+        total_steps: Int[Scalar, ""],
     ) -> tuple[S, Metrics]:
         pass
 
