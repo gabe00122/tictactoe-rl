@@ -7,10 +7,4 @@ __pycache__
 .ipynb_checkpoints
 pyrightconfig.json
 
-runs/
-run/
-run-selfplay/
-results/
-
-optimal_play.npy
 minmax_cache.npy

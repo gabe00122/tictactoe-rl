@@ -25,10 +25,10 @@ To install with cuda, first uncomment the cuda related sections from the pyproje
   poetry run enjoy --opponent minmax
   
   # Play against a trained model
-  poetry run enjoy --model-path ./runs/model_directory 
+  poetry run enjoy --model-path ./models/self_play
 
   # Visualize the models preferences
-  poetry run enjoy --model-path ./runs/model_directory  --render-preferences 
+  poetry run enjoy --model-path ./models/random_play --render-preferences 
 ```
 
 ## Train a model

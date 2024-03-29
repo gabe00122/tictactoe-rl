@@ -111,6 +111,7 @@ def train(settings: TrainSettings, output: str | PathLike[str]) -> float:
 
     return combined_score
 
+
 def agent_evaluation(static_state: StaticState, step_state: StepState, opponent, opponent_state):
     env_num = static_state.env_num
     rng_key = step_state.rng_key

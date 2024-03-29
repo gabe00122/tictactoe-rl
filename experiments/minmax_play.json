@@ -1,19 +1,19 @@
 {
   "seed": "random",
-  "total_steps": 10000,
+  "total_steps": 50000,
   "jit_steps": 1000,
   "env_num": 128,
   "agent": {
     "type": "actor_critic",
-    "discount": 0.99,
+    "discount": 0.8317125747175621,
     "root_hidden_layers": [],
     "actor_hidden_layers": [32, 32, 32, 32, 32, 32, 32, 32],
     "critic_hidden_layers": [32, 32, 32, 32, 32, 32, 32, 32],
-    "learning_rate": 0.0001,
-    "adam_beta": 0.99,
-    "weight_decay": 0,
-    "actor_coef": 0.2,
-    "entropy_coef": 0.01
+    "learning_rate": 0.009818049110492897,
+    "adam_beta": 0.9255425183439725,
+    "weight_decay":  8.063264566228957e-05,
+    "actor_coef":  0.06515194426181999,
+    "entropy_coef": 0.09052707518268724
   },
   "opponent": {
     "type": "minmax"
