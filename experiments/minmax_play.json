@@ -9,11 +9,11 @@
     "root_hidden_layers": [],
     "actor_hidden_layers": [32, 32, 32, 32, 32, 32, 32, 32],
     "critic_hidden_layers": [32, 32, 32, 32, 32, 32, 32, 32],
-    "learning_rate": 0.009818049110492897,
+    "learning_rate": 0.001,
     "adam_beta": 0.9255425183439725,
     "weight_decay":  8.063264566228957e-05,
     "actor_coef":  0.06515194426181999,
-    "entropy_coef": 0.09052707518268724
+    "entropy_coef": 0.01
   },
   "opponent": {
     "type": "minmax"

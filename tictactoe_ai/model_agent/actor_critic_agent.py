@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 import orbax.checkpoint as ocp
+import jax
 from jax import random, numpy as jnp
 from jaxtyping import Int8, Float32, Key, PRNGKeyArray, Array, Bool, Int, Scalar
 from flax import linen as nn

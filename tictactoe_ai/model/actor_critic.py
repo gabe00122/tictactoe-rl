@@ -11,7 +11,7 @@ from tictactoe_ai.metrics.types import Metrics
 from .entropy import entropy_loss
 
 
-type ModelParams = FrozenDict[str, Mapping[str, Any]] | dict[str, Any]
+ModelParams = FrozenDict[str, Mapping[str, Any]] | dict[str, Any]
 
 
 class TrainingState(NamedTuple):
@@ -32,7 +32,7 @@ class ActorCritic(PyTreeNode):
         return id(self)
 
     def init(self, key: PRNGKeyArray) -> TrainingState:
-        observation_dummy = jnp.zeros((9 * 3), jnp.float32)
+        observation_dummy = jnp.zeros((9 * 3 + 2), jnp.float32)
         mask_dummy = jnp.full((9,), True)
         model_params = self.model.init(key, observation_dummy, mask_dummy)
 
@@ -44,7 +44,7 @@ class ActorCritic(PyTreeNode):
     def act(
         self,
         params: TrainingState,
-        obs: Float32[Array, "9 3"],
+        obs: Float32[Array, "27"],
         avalible_actions: Bool[Array, "9"],
         key: PRNGKeyArray,
     ):

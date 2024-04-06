@@ -10,7 +10,14 @@ def get_observation(state: GameState, player: Int8[Scalar, ""]) -> Float[Array, 
 
     board = state.board + 1
     board = jax.lax.cond(player == -1, lambda: board, lambda: 2 - board)
-    return jax.nn.one_hot(board, num_classes).flatten()
+
+    board_encoding = jax.nn.one_hot(board, num_classes).flatten()
+    is_turn = jnp.array([
+        state.active_player == player,
+        state.active_player != player
+    ], jnp.float32)
+
+    return jnp.concatenate([board_encoding, is_turn])
 
 
 get_observation_vec = jax.vmap(get_observation, (0, 0))

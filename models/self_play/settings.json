@@ -1,7 +1,7 @@
 {
-  "git_hash": "2db2e2506e6fd419f51d1699c932c4effd8fc020",
-  "timestamp": "2024-03-29T22:25:58.094918+00:00",
-  "seed": 5675923374842526456,
+  "git_hash": "bad9293a359a238b96c92f5ca90a94392728fa3a",
+  "timestamp": "2024-04-06T00:12:29.966003+00:00",
+  "seed": 283800929606522548,
   "total_steps": 50000,
   "jit_steps": 1000,
   "env_num": 128,
@@ -29,11 +29,11 @@
       32,
       32
     ],
-    "learning_rate": 0.009818049110492897,
+    "learning_rate": 0.001,
     "adam_beta": 0.9255425183439725,
     "weight_decay": 8.063264566228957e-05,
     "actor_coef": 0.06515194426181999,
-    "entropy_coef": 0.09052707518268724
+    "entropy_coef": 0.01
   },
   "opponent": {
     "type": "self_play"
