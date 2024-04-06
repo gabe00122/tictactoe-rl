@@ -1,0 +1,41 @@
+{
+  "git_hash": null,
+  "timestamp": null,
+  "seed": 1660113877850760650,
+  "total_steps": 10000,
+  "jit_steps": 10000,
+  "env_num": 128,
+  "agent": {
+    "type": "actor_critic",
+    "discount": 0.9379795893681342,
+    "root_hidden_layers": [],
+    "actor_hidden_layers": [
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32
+    ],
+    "critic_hidden_layers": [
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32,
+      32
+    ],
+    "learning_rate": 0.0053224444230981745,
+    "adam_beta": 0.9425985018856496,
+    "weight_decay": 2.0444292629273585e-05,
+    "actor_coef": 0.08112270767890578,
+    "entropy_coef": 0.03762881192047056
+  },
+  "opponent": {
+    "type": "self_play"
+  }
+}
