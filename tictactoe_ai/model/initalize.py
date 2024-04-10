@@ -1,15 +1,15 @@
 import optax
-from .mlp import MlpBody, ActorHead, CriticHead
+from .mlp import MlpBody, ActorHead, CriticHead, FixupMlpBody
 from .agent_settings import AgentSettings
 from .actor_critic import ActorCritic, ActorCriticModel
 
 
 def create_actor_critic(settings: AgentSettings, total_steps: int) -> ActorCritic:
     actor_critic_model = ActorCriticModel(
-        body=MlpBody(features=settings["root_hidden_layers"]),
-        actor_neck=MlpBody(features=settings["actor_hidden_layers"]),
+        body=FixupMlpBody(features=settings["root_hidden_layers"]),
+        actor_neck=FixupMlpBody(features=settings["actor_hidden_layers"]),
         actor_head=ActorHead(actions=9),
-        critic_neck=MlpBody(features=settings["critic_hidden_layers"]),
+        critic_neck=FixupMlpBody(features=settings["critic_hidden_layers"]),
         critic_head=CriticHead(),
     )
 
