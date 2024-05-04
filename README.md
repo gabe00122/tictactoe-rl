@@ -3,6 +3,7 @@
 
 A practice project using deep reinforcement with self play to learn tic-tac-toe.
 This project includes a vectorized jax implementation of tictactoe as well as a custom actor critic model similar to a2c.
+Online demo here https://gabrielkeith.dev/projects/tictactoe
 
 <img width="400" alt="Screenshot 2024-03-27 at 10 34 12 PM" src="https://github.com/gabe00122/tictactoe-rl/assets/4421994/4ba40616-354b-4f5c-8df6-8948de3c4b6f">
 
