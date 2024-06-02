@@ -1,7 +1,12 @@
+import jax
 from jax import numpy as jnp
 from flax import linen as nn
 from typing import Sequence
 from .activation import mish
+
+
+def inspect(name, data):
+    jax.debug.print(name + ": min: {}, max: {}, mean: {}", jnp.min(data), jnp.max(data), jnp.mean(data))
 
 
 class FixupMlpBody(nn.Module):

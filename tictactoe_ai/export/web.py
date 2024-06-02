@@ -7,7 +7,7 @@ from tictactoe_ai.train_settings import load_settings
 
 
 def main():
-    model_load_path = Path("./runs/self_play_fix")
+    model_load_path = Path("./models/self_play_resnet")
     settings = load_settings(model_load_path / "settings.json")
     agent = ActorCriticAgent(settings["agent"], 0)
     state = agent.load(model_load_path / "checkpoint")

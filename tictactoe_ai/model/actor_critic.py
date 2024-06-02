@@ -32,7 +32,7 @@ class ActorCritic(PyTreeNode):
         return id(self)
 
     def init(self, key: PRNGKeyArray) -> TrainingState:
-        observation_dummy = jnp.zeros((9 * 3 + 2), jnp.float32)
+        observation_dummy = jnp.zeros((10), jnp.int8)
         mask_dummy = jnp.full((9,), True)
         model_params = self.model.init(key, observation_dummy, mask_dummy)
 
@@ -142,7 +142,7 @@ class ActorCritic(PyTreeNode):
             importance,
             took_turn,
             step,
-            total_steps
+            total_steps,
         )
 
         updates, opt_state = self.optimizer.update(
@@ -178,7 +178,7 @@ class ActorCritic(PyTreeNode):
             importance,
             took_turn,
             step,
-            total_steps
+            total_steps,
         )
 
         # set the importance back to 1 if it's the end of an episode
